@@ -11186,12 +11186,27 @@ var updateTheme = function() {
 document.addEventListener('ntpLoaded', updateTheme);
 document.body.onfocus = updateTheme;
 
+
+var retryCount = 0, retryInterval = 50;
+var topsite;
+
+var setTopSite = function() {
+  if (chrome.embeddedSearch.newTabPage.mostVisited.length == topsite.length) {
+    console.log("mostVisited loaded in " + retryCount * retryInterval + "ms");
+    ntp.setMostVisitedPages(topsite);
+  } else {
+    retryCount++;
+    window.setTimeout(setTopSite, retryInterval);
+  }
+};
+
 // Duplicate with loadTimeData.js
 window.addEventListener("message", function(event) {
   console.log(event.data);
-  if (event.data.method == "topSitesResult")
-    ntp.setMostVisitedPages(event.data.result);
-  else if (event.data.method == "dominantColorResult")
+  if (event.data.method == "topSitesResult") {
+    topsite = event.data.result;
+    setTopSite();
+  } else if (event.data.method == "dominantColorResult")
     ntp.setFaviconDominantColor(event.data.result.id, event.data.result.dominantColor);
 }, false);
 
