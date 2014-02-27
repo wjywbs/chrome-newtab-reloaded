@@ -14,7 +14,9 @@ if (chrome.send == undefined) {
       method += " implemented!";
       break;
     case "navigateToUrl":
-      location = args[0];
+      // location = args[0] does not work because it will trigger "Not allowed
+      // to load local resource" error
+      chrome.embeddedSearch.newTabPage.navigateContentWindow(args[0]);
       // NOT REACHED
       break;
     }
