@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html i18n-values="
+    dir:textdirection;
+    hasattribution:hasattribution;
+    themegravity:themegravity;
+    bookmarkbarattached:bookmarkbarattached;"
+  class="starting-up">
+<head>
+<meta charset="utf-8">
+<title i18n-content="title"></title>
+<!-- Don't scale the viewport in either portrait or landscape mode.
+     Note that this means apps will be reflowed when rotated (like iPad).
+     If we wanted to maintain position we could remove 'maximum-scale' so
+     that we'd zoom out in portrait mode, but then there would be a bunch
+     of unusable space at the bottom.
+-->
+<meta name="viewport"
+      content="user-scalable=no, width=device-width, maximum-scale=1.0">
+
+<style>/* Copyright (c) 2012 The Chromium Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file. */
+
+.bubble {
+  position: absolute;
+  white-space: normal;
+  /* Height is dynamic, width fixed. */
+  width: 300px;
+  z-index: 9999;
+}
+
+.bubble-content {
+  color: black;
+  line-height: 150%;
+  margin: 1px;
+  padding: 8px 11px 12px;
+  position: relative;
+  z-index: 3;
+}
+
+/* When the close button is there, we need more padding on the right of the
+ * bubble. */
+.bubble-close:not([hidden]) ~ .bubble-content {
+  -webkit-padding-end: 22px;
+}
+
+.bubble-close {
+  height: 16px;
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  width: 16px;
+  z-index: 4;
+}
+
+html[dir='rtl'] .bubble-close {
+  left: 6px;
+  right: auto;
+}
+
+.bubble-close {
+  background-image: -webkit-image-set(
+      url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAiElEQVR42r2RsQrDMAxEBRdl8SDcX8lQPGg1GBI6lvz/h7QyRRXV0qUULwfvwZ1tenw5PxToRPWMC52eA9+WDnlh3HFQ/xBQl86NFYJqeGflkiogrOvVlIFhqURFVho3x1moGAa3deMs+LS30CAhBN5nNxeT5hbJ1zwmji2k+aF6NENIPf/hs54f0sZFUVAMigAAAABJRU5ErkJggg==') 1x);
+}
+
+.bubble-close:hover {
+  background-image: -webkit-image-set(
+      url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAqUlEQVR4XqWRMQqEMBBF/1E8Ra6x6V3FRnS9QbCxtJg6Z7CzE9lTiIXXyUb3C8EULixDIMM8Zt4kcDfxM5A45U+cgeXnC1tREgkzAgob3hiq3CUHvGLG4FTQoSgxQGDrzN8WTLBGnx2IVDksen9GH7Z9hA5E6uxABMJyCHDMCEGHzugLQPPlBCBNGq+5YtpnGw1Bv+te15ypljTpVzdak5Opy+z+qf//zQ+Lg+07ay5KsgAAAABJRU5ErkJggg==') 1x);
+}
+
+.bubble-close:active {
+  background-image: -webkit-image-set(
+      url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAARElEQVQoz2P4z4AfMlBLAYMdwxkghgEwD1XBGTC0g0sDIaYJECVwFqoChBK4WegKkJWArSJZAQErCDqSKG/iCyhaRhYA9LDIbULDzlIAAAAASUVORK5CYII=') 1x);
+}
+
+.bubble-shadow {
+  bottom: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 1;
+}
+
+.bubble-arrow {
+  -webkit-transform: rotate(45deg);
+  box-shadow: 1px 1px 6px rgba(0, 0, 0, 0.15);
+  height: 15px;
+  position: absolute;
+  width: 15px;
+  z-index: 2;
+}
+
+.bubble-content,
+.bubble-arrow {
+  background: white;
+}
+
+.bubble-shadow,
+.bubble-arrow {
+  border: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.bubble-shadow,
+.bubble-content {
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.auto-close-bubble {
+  position: fixed;
+}
+</style>
+<style>/* Copyright (c) 2012 The Chromium Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file. */
+
+.expandable-bubble {
+  -webkit-border-image: url('chrome://theme/IDR_APP_NOTIFICATION_SMALL_BUBBLE')
+                        5 5 7 6 stretch;
+  -webkit-box-sizing: border-box;
+  -webkit-user-select: none;
+  border-width: 5px 5px 7px 6px;
+  color: #444;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 12px;
+  position: absolute;
+  z-index: 1;
+}
+
+.expandable-bubble::after {
+  bottom: -1px;
+  content: url('chrome://theme/IDR_APP_NOTIFICATION_NUB');
+  display: block;
+  height: 7px;
+  position: absolute;
+  right: 5px;  /* TODO(finnur): Need to handle RTL properly. */
+  width: 9px;
+}
+
+.expandable-bubble > .expandable-bubble-contents > .expandable-bubble-title {
+  display: inline-block;
+  margin-left: 1px;
+  margin-top : -3px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.expandable-bubble[masked] > .expandable-bubble-contents >
+    .expandable-bubble-title::after {
+  content: url('chrome://theme/IDR_APP_NOTIFICATION_NUB_MASK');
+  display: block;
+  height: 15px;
+  overflow: hidden;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 12px;
+}
+
+.expandable-bubble[expanded] > .expandable-bubble-contents >
+    .expandable-bubble-title {
+  font-size: 13px;
+  margin-bottom: 3px;
+  margin-left: 0;
+}
+
+.expandable-bubble-close {
+  height: 16px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 16px;
+  z-index: 2;
+}
+
+.expandable-bubble[expanded] {
+  padding: 3px;
+  z-index: 3;  /* One higher then the close button on an unexpanded bubble. */
+}
+
+.expandable-bubble[expanded] > .expandable-bubble-close {
+  z-index: 4;
+}
+
+.expandable-bubble-close {
+  background-image: -webkit-image-set(
+      url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAiElEQVR42r2RsQrDMAxEBRdl8SDcX8lQPGg1GBI6lvz/h7QyRRXV0qUULwfvwZ1tenw5PxToRPWMC52eA9+WDnlh3HFQ/xBQl86NFYJqeGflkiogrOvVlIFhqURFVho3x1moGAa3deMs+LS30CAhBN5nNxeT5hbJ1zwmji2k+aF6NENIPf/hs54f0sZFUVAMigAAAABJRU5ErkJggg==') 1x);
+}
+
+.expandable-bubble-close:hover {
+  background-image: -webkit-image-set(
+      url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAqUlEQVR4XqWRMQqEMBBF/1E8Ra6x6V3FRnS9QbCxtJg6Z7CzE9lTiIXXyUb3C8EULixDIMM8Zt4kcDfxM5A45U+cgeXnC1tREgkzAgob3hiq3CUHvGLG4FTQoSgxQGDrzN8WTLBGnx2IVDksen9GH7Z9hA5E6uxABMJyCHDMCEGHzugLQPPlBCBNGq+5YtpnGw1Bv+te15ypljTpVzdak5Opy+z+qf//zQ+Lg+07ay5KsgAAAABJRU5ErkJggg==') 1x);
+}
+
+.expandable-bubble-close:active {
+  background-image: -webkit-image-set(
+      url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAARElEQVQoz2P4z4AfMlBLAYMdwxkghgEwD1XBGTC0g0sDIaYJECVwFqoChBK4WegKkJWArSJZAQErCDqSKG/iCyhaRhYA9LDIbULDzlIAAAAASUVORK5CYII=') 1x);
+}
+</style>
+<style>/* Copyright (c) 2012 The Chromium Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file. */
+
+menu {
+  -webkit-box-shadow: 0 2px 4px rgba(0, 0, 0, .50);
+  background: white;
+  border-radius: 2px;
+  color: black;
+  cursor: default;
+  left: 0;
+  margin: 0;
+  outline: 1px solid rgba(0, 0, 0, 0.2);
+  padding: 8px 0;
+  position: fixed;
+  white-space: nowrap;
+  z-index: 3;
+}
+
+menu:not(.decorated) {
+  display: none;
+}
+
+menu > * {
+  box-sizing: border-box;
+  display: block;
+  margin: 0;
+  text-align: start;
+  width: 100%;
+}
+
+menu > :not(hr) {
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  color: black;
+  font: inherit;
+  line-height: 18px;
+  outline: none;
+  overflow: hidden;
+  padding: 0 19px;
+  text-overflow: ellipsis;
+}
+
+menu > hr {
+  background: -webkit-linear-gradient(left,
+                                      rgba(0, 0, 0, .10),
+                                      rgba(0, 0, 0, .02) 96%);
+  border: 0;
+  height: 1px;
+  margin: 8px 0;
+}
+
+menu > [disabled] {
+  color: rgba(0, 0, 0, .3);
+}
+
+menu > [hidden] {
+  display: none;
+}
+
+menu > :not(hr)[selected] {
+  background-color: rgba(0, 0, 0, .06);
+}
+
+menu > :not(hr)[selected]:active {
+  background-color: rgba(0, 0, 0, .06);
+}
+
+menu > [checked]::before {
+  content: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAARklEQVQY02NgwA+MgViQkIJ3QKzEAFVpjEPBf5giJaiAMRYF72DWKSEJlKMpgNsgiCTxH5sCBhxWGOPzzV2sCv7//08QAwAUfjKK4sDXvQAAAABJRU5ErkJggg==');
+  display: inline-block;
+  height: 9px;
+  margin: 0 5px;
+  width: 9px;
+}
+
+menu > [checked] {
+  -webkit-padding-start: 0;
+}
+
+menu > [selected][checked]:active::before {
+  content: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAATUlEQVQYV2P4//8/Ax5sDMSChBS8A2IlEEcQKoBNwX+YIiWoAEwhsgIQLQhTBBMoR1MA1gizDiYBA8gmM2BzA4oCZEUwhXfRFaArwokBBR4JwRMmHQoAAAAASUVORK5CYII=');
+}
+
+/* TODO(zvorygin) menu > [shortcutText]::after - this selector is much better,
+ * but it's buggy in current webkit revision, so I have to use [showShortcuts].
+ */
+menu[showShortcuts] > ::after {
+  -webkit-padding-start: 30px;
+  color: #999;
+  content: attr(shortcutText);
+  float: right;
+}
+</style>
+<style>/* Copyright (c) 2012 The Chromium Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file. */
+
+/* NOTE: If you are using the drop-down style, you must first call
+ * MenuButton.createDropDownArrows() to initialize the CSS canvases that
+ * contain the arrow images. */
+
+button.menu-button.drop-down {
+  background: white -webkit-canvas(drop-down-arrow) no-repeat center 4px;
+  border: 1px solid rgb(192, 195, 198);
+  border-radius: 2px;
+  height: 12px;
+  margin: 0 5px;
+  padding: 0;
+  position: relative;
+  top: 1px;
+  width: 12px;
+}
+
+button.menu-button.drop-down:hover {
+  background-image: -webkit-canvas(drop-down-arrow-hover);
+  border-color: rgb(48, 57, 66);
+}
+
+button.menu-button.drop-down[menu-shown],
+button.menu-button.drop-down:focus {
+  background-color: rgb(48, 57, 66);
+  background-image: -webkit-canvas(drop-down-arrow-active);
+  border-color: rgb(48, 57, 66);
+}
+
+button.menu-button.using-mouse {
+  outline: none;
+}
+</style>
+<style>/* Copyright (c) 2012 The Chromium Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file. */
+
+.trash {
+  -webkit-appearance: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: inline-block;
+  outline: none;
+  padding: 0;
+  position: relative;
+  width: 30px;
+}
+
+.trash > span {
+  display: inline-block;
+}
+
+.trash > .can,
+.trash > .lid {
+  background: url('$EXTENSION_URLtrash.png') 0 0 no-repeat;
+  left: 8px;
+  position: absolute;
+  right: 8px;
+  top: 2px;
+}
+
+.trash > .lid {
+  -webkit-transform-origin: -7% 100%;
+  -webkit-transition: -webkit-transform 150ms;
+  height: 6px;
+  width: 14px;
+}
+
+html[dir='rtl'] .trash > .lid {
+  -webkit-transform-origin: 107% 100%;
+}
+
+.trash:focus > .lid,
+.trash:hover > .lid {
+  -webkit-transform: rotate(-45deg);
+  -webkit-transition: -webkit-transform 250ms;
+}
+
+html[dir='rtl'] .trash:focus > .lid,
+html[dir='rtl'] .trash:hover > .lid {
+  -webkit-transform: rotate(45deg);
+}
+
+.trash > .can {
+  background-position: -1px -4px;
+  height: 12px;
+  /* The margins match the background position offsets. */
+  margin-left: 1px;
+  /* The right margin is one greater due to a shadow on the trash image. */
+  margin-right: 2px;
+  margin-top: 4px;
+  width: 11px;
+}
+</style>
+<style>/* Copyright (c) 2012 The Chromium Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file. */
+
+/* This file defines styles for form controls. The order of rule blocks is
+ * important as there are some rules with equal specificity that rely on order
+ * as a tiebreaker. These are marked with OVERRIDE. */
+
+/* Default state **************************************************************/
+
+:-webkit-any(button,
+             input[type='button'],
+             input[type='submit']):not(.custom-appearance):not(.link-button),
+select,
+input[type='checkbox'],
+input[type='radio'] {
+  -webkit-appearance: none;
+  -webkit-user-select: none;
+  background-image: -webkit-linear-gradient(#ededed, #ededed 38%, #dedede);
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 2px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08),
+      inset 0 1px 2px rgba(255, 255, 255, 0.75);
+  color: #444;
+  font: inherit;
+  margin: 0 1px 0 0;
+  text-shadow: 0 1px 0 rgb(240, 240, 240);
+}
+
+:-webkit-any(button,
+             input[type='button'],
+             input[type='submit']):not(.custom-appearance):not(.link-button),
+select {
+  min-height: 2em;
+  min-width: 4em;
+/* The following platform-specific rule is necessary to get adjacent
+   * buttons, text inputs, and so forth to align on their borders while also
+   * aligning on the text's baselines. */
+  padding-bottom: 1px;
+}
+
+:-webkit-any(button,
+             input[type='button'],
+             input[type='submit']):not(.custom-appearance):not(.link-button) {
+  -webkit-padding-end: 10px;
+  -webkit-padding-start: 10px;
+}
+
+select {
+  -webkit-appearance: none;
+  -webkit-padding-end: 20px;
+  -webkit-padding-start: 6px;
+  /* OVERRIDE */
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAAICAYAAAAbQcSUAAAAaUlEQVQoz2P4//8/A7UwdkEGhiggTsODo4g2LBEImJmZvwE1/UfHIHGQPNGGAbHCggULFrKxsf1ENgjEB4mD5EnxJoaByAZB5Yk3DNlAPj6+L8gGkWUYzMC3b982IRtEtmFQjaxYxDAwAGi4TwMYKNLfAAAAAElFTkSuQmCC'),
+      -webkit-linear-gradient(#ededed, #ededed 38%, #dedede);
+  background-position: right center;
+  background-repeat: no-repeat;
+}
+
+html[dir='rtl'] select {
+  background-position: center left;
+}
+
+input[type='checkbox'] {
+  bottom: 2px;
+  height: 13px;
+  position: relative;
+  vertical-align: middle;
+  width: 13px;
+}
+
+input[type='radio'] {
+  /* OVERRIDE */
+  border-radius: 100%;
+  bottom: 3px;
+  height: 15px;
+  position: relative;
+  vertical-align: middle;
+  width: 15px;
+}
+
+/* TODO(estade): add more types here? */
+input[type='number'],
+input[type='password'],
+input[type='search'],
+input[type='text'],
+input[type='url'],
+input:not([type]),
+textarea {
+  border: 1px solid #bfbfbf;
+  border-radius: 2px;
+  box-sizing: border-box;
+  color: #444;
+  font: inherit;
+  margin: 0;
+  /* Use min-height to accommodate addditional padding for touch as needed. */
+  min-height: 2em;
+  padding: 3px;
+/* For better alignment between adjacent buttons and inputs. */
+  padding-bottom: 4px;
+}
+
+input[type='search'] {
+  -webkit-appearance: textfield;
+  /* NOTE: Keep a relatively high min-width for this so we don't obscure the end
+   * of the default text in relatively spacious languages (i.e. German). */
+  min-width: 160px;
+}
+
+/* Remove when https://bugs.webkit.org/show_bug.cgi?id=51499 is fixed.
+ * TODO(dbeam): are there more types that would benefit from this? */
+input[type='search']::-webkit-textfield-decoration-container {
+  direction: inherit;
+}
+
+/* Checked ********************************************************************/
+
+input[type='checkbox']:checked::before {
+  -webkit-user-select: none;
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAALCAYAAACprHcmAAAAcklEQVQY02NgwA/YoJgoEA/Es4DYgJBCJSBeD8SboRinBiYg7kZS2IosyQ/Eakh8LySFq4FYHFlxGRBvBOJYqMRqJMU+yApNkSRAeC0Sux3dfSCTetE0wKyXxOWhMKhTYIr9CAUXyJMzgLgBagBBgDPGAI2LGdNt0T1AAAAAAElFTkSuQmCC');
+  background-size: 100% 100%;
+  content: '';
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+input[type='radio']:checked::before {
+  background-color: #666;
+  border-radius: 100%;
+  bottom: 3px;
+  content: '';
+  display: block;
+  left: 3px;
+  position: absolute;
+  right: 3px;
+  top: 3px;
+}
+
+/* Hover **********************************************************************/
+
+:enabled:hover:-webkit-any(
+    select,
+    input[type='checkbox'],
+    input[type='radio'],
+    :-webkit-any(
+        button,
+        input[type='button'],
+        input[type='submit']):not(.custom-appearance):not(.link-button)) {
+  background-image: -webkit-linear-gradient(#f0f0f0, #f0f0f0 38%, #e0e0e0);
+  border-color: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12),
+      inset 0 1px 2px rgba(255, 255, 255, 0.95);
+  color: black;
+}
+
+:enabled:hover:-webkit-any(select) {
+  /* OVERRIDE */
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAAICAYAAAAbQcSUAAAAaUlEQVQoz2P4//8/A7UwdkEGhiggTsODo4g2LBEImJmZvwE1/UfHIHGQPNGGAbHCggULFrKxsf1ENgjEB4mD5EnxJoaByAZB5Yk3DNlAPj6+L8gGkWUYzMC3b982IRtEtmFQjaxYxDAwAGi4TwMYKNLfAAAAAElFTkSuQmCC'),
+      -webkit-linear-gradient(#f0f0f0, #f0f0f0 38%, #e0e0e0);
+}
+
+/* Active *********************************************************************/
+
+:enabled:active:-webkit-any(
+    select,
+    input[type='checkbox'],
+    input[type='radio'],
+    :-webkit-any(
+        button,
+        input[type='button'],
+        input[type='submit']):not(.custom-appearance):not(.link-button)) {
+  background-image: -webkit-linear-gradient(#e7e7e7, #e7e7e7 38%, #d7d7d7);
+  box-shadow: none;
+  text-shadow: none;
+}
+
+:enabled:active:-webkit-any(select) {
+  /* OVERRIDE */
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAAICAYAAAAbQcSUAAAAaUlEQVQoz2P4//8/A7UwdkEGhiggTsODo4g2LBEImJmZvwE1/UfHIHGQPNGGAbHCggULFrKxsf1ENgjEB4mD5EnxJoaByAZB5Yk3DNlAPj6+L8gGkWUYzMC3b982IRtEtmFQjaxYxDAwAGi4TwMYKNLfAAAAAElFTkSuQmCC'),
+      -webkit-linear-gradient(#e7e7e7, #e7e7e7 38%, #d7d7d7);
+}
+
+/* Disabled *******************************************************************/
+
+:disabled:-webkit-any(
+    button,
+    input[type='button'],
+    input[type='submit']):not(.custom-appearance):not(.link-button),
+select:disabled {
+  background-image: -webkit-linear-gradient(#f1f1f1, #f1f1f1 38%, #e6e6e6);
+  border-color: rgba(80, 80, 80, 0.2);
+  box-shadow: 0 1px 0 rgba(80, 80, 80, 0.08),
+      inset 0 1px 2px rgba(255, 255, 255, 0.75);
+  color: #aaa;
+}
+
+select:disabled {
+  /* OVERRIDE */
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAAICAYAAAAbQcSUAAAAWklEQVQoz2P4//8/A7UwdkEGhiggTsODo4g2LBEIGhoa/uPCIHmiDQNihQULFizEZhBIHCRPijexGggzCCpPvGHoBiIbRJZhMAPfvn3bhGwQ2YZBNbJiEcPAAIgGZrTRc1ZLAAAAAElFTkSuQmCC'),
+      -webkit-linear-gradient(#f1f1f1, #f1f1f1 38%, #e6e6e6);
+}
+
+input:disabled:-webkit-any([type='checkbox'],
+                           [type='radio']) {
+  opacity: .75;
+}
+
+input:disabled:-webkit-any([type='password'],
+                           [type='search'],
+                           [type='text'],
+                           [type='url'],
+                           :not([type])) {
+  color: #999;
+}
+
+/* Focus **********************************************************************/
+
+:enabled:focus:-webkit-any(
+    select,
+    input[type='checkbox'],
+    input[type='number'],
+    input[type='password'],
+    input[type='radio'],
+    input[type='search'],
+    input[type='text'],
+    input[type='url'],
+    input:not([type]),
+    :-webkit-any(
+         button,
+         input[type='button'],
+         input[type='submit']):not(.custom-appearance):not(.link-button)) {
+  /* OVERRIDE */
+  -webkit-transition: border-color 200ms;
+  /* We use border color because it follows the border radius (unlike outline).
+   * This is particularly noticeable on mac. */
+  border-color: rgb(77, 144, 254);
+  outline: none;
+}
+
+/* Link buttons ***************************************************************/
+
+.link-button {
+  -webkit-box-shadow: none;
+  background: transparent none;
+  border: none;
+  color: rgb(17, 85, 204);
+  cursor: pointer;
+  /* Input elements have -webkit-small-control which can override the body font.
+   * Resolve this by using 'inherit'. */
+  font: inherit;
+  margin: 0;
+  padding: 0 4px;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
+.link-button:active {
+  color: rgb(5, 37, 119);
+  text-decoration: underline;
+}
+
+.link-button[disabled] {
+  color: #999;
+  cursor: default;
+  text-decoration: none;
+}
+
+/* Checkbox/radio helpers ******************************************************
+ *
+ * .checkbox and .radio classes wrap labels. Checkboxes and radios should use
+ * these classes with the markup structure:
+ *
+ *   <div class="checkbox">
+ *     <label>
+ *       <input type="checkbox"></input>
+ *       <span>
+ *     </label>
+ *   </div>
+ */
+
+:-webkit-any(.checkbox, .radio) label {
+  /* Don't expand horizontally: <http://crbug.com/112091>. */
+  display: -webkit-inline-box;
+  padding-bottom: 7px;
+  padding-top: 7px;
+}
+
+:-webkit-any(.checkbox, .radio) label input ~ span {
+  -webkit-margin-start: 0.6em;
+  /* Make sure long spans wrap at the same horizontal position they start. */
+  display: block;
+}
+
+:-webkit-any(.checkbox, .radio) label:hover {
+  color: black;
+}
+
+label > input:disabled:-webkit-any([type='checkbox'], [type='radio']) ~ span {
+  color: #999;
+}
+</style>
+<style>/* Copyright (c) 2012 The Chromium Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file. */
+
+.app {
+  outline: none;
+  position: absolute;
+  text-align: center;
+}
+
+.app-contents {
+  -webkit-transition: -webkit-transform 100ms;
+}
+
+.app-contents:active:not(.suppress-active),
+.app:not(.click-focus):focus .app-contents:not(.suppress-active),
+.drag-representation:not(.placing) .app-contents {
+  -webkit-transform: scale(1.1);
+}
+
+/* Don't animate the initial scaling.  */
+.app-contents:active:not(.suppress-active),
+/* Active gets applied right before .suppress-active, so to avoid flicker
+ * we need to make the scale go back to normal without an animation. */
+.app-contents.suppress-active {
+  -webkit-transition-duration: 0;
+}
+
+.app-contents > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-img-container {
+  /* -webkit-mask-image set by JavaScript to the image source. */
+  -webkit-mask-size: 100% 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.app-img-container > * {
+  height: 100%;
+  width: 100%;
+}
+
+.app-icon-div {
+  -webkit-box-align: center;
+  -webkit-box-pack: center;
+  background-color: white;
+  border: 1px solid #d5d5d5;
+  border-radius: 5px;
+  display: -webkit-box;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  vertical-align: middle;
+  z-index: 0;
+}
+
+.app-icon-div .app-img-container {
+  bottom: 10px;
+  left: 10px;
+  position: absolute;
+}
+
+.app-icon-div .color-stripe {
+  border-bottom-left-radius: 5px 5px;
+  border-bottom-right-radius: 5px 5px;
+  bottom: 0;
+  height: 3px;
+  opacity: 1.0;
+  position: absolute;
+  width: 100%;
+  z-index: 100;
+}
+
+.app-context-menu > button:first-child {
+  font-weight: bold;
+}
+
+.app-context-menu {
+  z-index: 1000;
+}
+
+.app-context-menu > [checked]::before {
+  height: 5px;
+}
+
+.launch-click-target {
+  cursor: pointer;
+}
+
+.app-img-container > img:first-child {
+  display: block;
+}
+
+.app .invisible {
+  visibility: hidden;
+}
+
+#app-launcher-promo {
+  background-color: white;
+  border: 1px solid lightgray;
+  border-bottom-width: 3px;
+  border-radius: 2px;
+  border-top-width: 2px;
+  bottom: 90px;
+  font-family: Arial, Helvetica, sans-serif;
+  height: 120px;
+  left: 50%;
+  margin-left: -300px;
+  position: fixed;
+  width: 600px;
+}
+
+#app-launcher-promo > .close-button {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 14px;
+}
+
+.apps-promo-text {
+  color: #222;
+  font-size: 16px;
+  left: 30px;
+  line-height: 24px;
+  position: absolute;
+  top: 30px;
+}
+
+.apps-promo-learn-more {
+  background-color: rgb(77, 144, 254);
+  border: 1px solid rgb(47, 91, 183);
+  border-radius: 2px;
+  color: white;
+  cursor: default;
+  font-size: 11px;
+  font-weight: bold;
+  height: 27px;
+  left: 30px;
+  line-height: 27px;
+  padding: 0 8px;
+  position: absolute;
+  text-align: center;
+  text-decoration: none;
+  top: 70px;
+  width: 90px;
+}
+
+.apps-promo-learn-more:hover {
+  background-image: -webkit-linear-gradient(
+      top, rgb(77, 144, 254), rgb(53, 122, 232));
+  border: 1px solid rgb(47, 91, 183);
+}
+
+#app-launcher-promo > img {
+  bottom: 0;
+  position: absolute;
+  right: 30px;
+}
+</style>
+<link rel="stylesheet" href="$EXTENSION_URLsuggestions_page.css">
+<style>/* Copyright (c) 2012 The Chromium Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file. */
+
+.most-visited {
+  position: absolute;
+  z-index: 0;
+}
+
+.most-visited {
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+  position: absolute;
+  text-decoration: none;
+}
+
+.most-visited:focus {
+  outline: none;
+}
+
+.fills-parent {
+  bottom: 0;
+  display: -webkit-box;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+/* filler mode: hide everything except the thumbnail --- leave a grey rectangle
+ * in its place. */
+.filler * {
+  visibility: hidden;
+}
+
+.filler {
+  pointer-events: none;
+}
+
+.most-visited .close-button {
+  -webkit-transition: opacity 150ms;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 5;
+}
+
+html[dir=rtl] .most-visited .close-button {
+  left: 0;
+  right: auto;
+}
+
+.most-visited:hover .close-button {
+  -webkit-transition-delay: 500ms;
+  opacity: 1;
+}
+
+.most-visited .close-button:hover {
+  -webkit-transition: none;
+}
+
+.most-visited .favicon {
+  -webkit-margin-start: 5px;
+  background: no-repeat left 50%;
+  background-size: 16px;
+  bottom: 7px;
+  box-sizing: border-box;
+  display: block;
+  height: 16px;
+  position: absolute;
+  width: 16px;
+}
+
+html[dir='rtl'] .most-visited .favicon {
+  background-position-x: right;
+}
+
+.most-visited .color-stripe {
+  border-bottom-left-radius: 3px 3px;
+  border-bottom-right-radius: 3px 3px;
+  /* Matches height of title.  */
+  bottom: 23px;
+  height: 3px;
+  /* Matches padding-top of the title. */
+  margin-bottom: 8px;
+  position: absolute;
+  width: 100%;
+  z-index: 10;
+}
+
+.most-visited .title {
+  display: block;
+  height: 23px;
+  overflow: hidden;
+  padding-top: 8px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thumbnail {
+  -webkit-transition: opacity 150ms;
+  background: no-repeat;
+  /* This shows for missing thumbnails. */
+  background-color: #eee;
+  background-size: 100%;
+  border-radius: 3px;
+  /* These max dimensions are not necessary, as the sizing logic in the .js
+   * should be sufficient, but they're here for extra insurance. We never want
+   * to scale a thumbnail larger than this size. */
+  max-height: 132px;
+  max-width: 212px;
+}
+
+.filler .thumbnail {
+  /* TODO(estade): there seems to be a webkit bug where this border is not
+   * always removed when it should be. Investigate. */
+  border: 1px solid;
+  visibility: visible;
+}
+
+.thumbnail-shield {
+  background: -webkit-linear-gradient(rgba(255, 255, 255, 0),
+                                      rgba(255, 255, 255, 0) 50%,
+                                      rgba(255, 255, 255, 0.9));
+  border-radius: 3px;
+}
+
+/* TODO(dbeam): Remove this when printing of -webkit-linear-gradient() works. */
+@media print {
+  .thumbnail-shield {
+    background: none;
+  }
+}
+
+.most-visited:focus .thumbnail,
+.most-visited:hover .thumbnail {
+  opacity: 0.95;
+}
+
+.most-visited:focus .thumbnail-shield,
+.most-visited:hover .thumbnail-shield,
+.most-visited:active .thumbnail-shield {
+  background: -webkit-linear-gradient(rgba(255, 255, 255, 0),
+                                      rgba(255, 255, 255, 0) 80%,
+                                      rgba(255, 255, 255, 0.9));
+}
+
+/* The thumbnail gets lighter when clicked, but not when the click is on the
+ * close button. */
+.most-visited:active .close-button:not(:active) + .thumbnail {
+  opacity: 0.9;
+}
+
+/* The thumbnail gets a shadow when clicked, but not when the click is on the
+ * close button. */
+.most-visited:active .close-button:not(:active) + .thumbnail .thumbnail-shield {
+  -webkit-box-shadow: inset 0 1px 10px rgba(0, 0, 0, 0.2);
+}
+
+.thumbnail-wrapper {
+  -webkit-box-flex: 1;
+  -webkit-transition: background-color 150ms;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  display: block;
+  position: relative;
+  z-index: 5;
+}
+
+.filler .thumbnail-wrapper {
+  visibility: visible;
+}
+
+/* 'finishing-drag' is the state we are in after dropping on the trash can.
+ * Override opacity of the tile to 1, so that the new tile animation
+ * occurs simultaneously with the trash animation. */
+.tile.dragging.finishing-drag {
+  opacity: 1;
+}
+
+/* Don't display the new tile until there's something to show.  */
+.blacklisted {
+  opacity: 0;
+}
+</style>
+<style>/* Copyright (c) 2012 The Chromium Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file. */
+
+/* TODO(estade): handle overflow better? I tried overflow-x: hidden and
+   overflow-y: visible (for the new dot animation), but this makes a scroll
+   bar appear */
+#dot-list {
+  /* Expand to take up all available horizontal space.  */
+  -webkit-box-flex: 1;
+  /* Center child dots. */
+  -webkit-box-pack: center;
+  display: -webkit-box;
+  height: 100%;
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+html.starting-up #dot-list {
+  display: none;
+}
+
+.dot {
+  -webkit-box-flex: 1;
+  -webkit-margin-end: 10px;
+  -webkit-padding-start: 2px;
+  -webkit-transition: -webkit-margin-end 250ms, max-width 250ms, opacity 250ms;
+  box-sizing: border-box;
+  cursor: pointer;
+  /* max-width: Set in new_tab.js. See measureNavDots() */
+  outline: none;
+  text-align: left;
+}
+
+.dot:last-child {
+  -webkit-margin-end: 0;
+}
+
+.dot:only-of-type {
+  cursor: default;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dot.small {
+  -webkit-margin-end: 0;
+  max-width: 0;
+}
+
+.dot .selection-bar {
+  -webkit-transition: border-color 200ms;
+  border-bottom: 5px solid;
+  border-color: rgba(0, 0, 0, 0.1);
+  height: 10px;
+}
+
+.dot input {
+  -webkit-appearance: caret;
+  -webkit-margin-start: 2px;
+  -webkit-transition: color 200ms;
+  background-color: transparent;
+  cursor: inherit;
+  font: inherit;
+  height: auto;
+  margin-top: 2px;
+  padding: 1px 0;
+  width: 90%;
+}
+
+.dot input:focus {
+  cursor: auto;
+}
+
+/* Everything below here should be themed but we don't have appropriate colors
+ * yet.
+ */
+.dot input {
+  color: #b2b2b2;
+}
+
+.dot:focus input,
+.dot:hover input,
+.dot.selected input {
+  color: #7f7f7f;
+}
+
+.dot:focus .selection-bar,
+.dot:hover .selection-bar,
+.dot.drag-target .selection-bar {
+  border-color: #b2b2b2;
+}
+
+.dot.selected .selection-bar {
+  border-color: #7f7f7f;
+}
+</style>
+<style>/* Copyright (c) 2012 The Chromium Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file. */
+
+html {
+  /* It's necessary to put this here instead of in body in order to get the
+     background-size of 100% to work properly */
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  /* Don't highlight links when they're tapped. Safari has bugs here that
+     show up as flicker when dragging in some situations */
+  -webkit-tap-highlight-color: transparent;
+  /* Don't allow selecting text - can occur when dragging */
+  -webkit-user-select: none;
+  background-size: auto 100%;
+  margin: 0;
+}
+
+/* [hidden] does display:none, but its priority is too low in some cases. */
+[hidden] {
+  display: none !important;
+}
+
+#notification-container {
+  -webkit-transition: opacity 200ms;
+  bottom: 31px;
+  display: block;
+  float: left;
+  position: relative;
+  text-align: start;
+  z-index: 15;
+}
+
+html[dir='rtl'] #notification-container {
+  float: right;
+}
+
+#notification-container.card-changed {
+  -webkit-transition: none;
+  opacity: 0;
+}
+
+#notification-container.inactive {
+  -webkit-transition: opacity 200ms;
+  opacity: 0;
+}
+
+#notification {
+  display: inline-block;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+#notification > * {
+  display: inline-block;
+  white-space: normal;
+}
+
+#notification > div > div,
+#notification > div {
+  display: inline-block;
+}
+
+/* NOTE: This is in the probable case that we start stuffing 16x16 data URI'd
+ * icons in the promo notification responses. */
+#notification > span > img {
+  margin-bottom: -3px;
+}
+
+#notification .close-button {
+  -webkit-margin-start: 8px;  /* Matching value in TilePage#repositionTile_. */
+  vertical-align: top;
+}
+
+.close-button {
+  background: no-repeat;
+  background-color: transparent;
+  /* TODO(estade): this should animate between states. */
+  background-image: -webkit-image-set(
+      url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAiElEQVR42r2RsQrDMAxEBRdl8SDcX8lQPGg1GBI6lvz/h7QyRRXV0qUULwfvwZ1tenw5PxToRPWMC52eA9+WDnlh3HFQ/xBQl86NFYJqeGflkiogrOvVlIFhqURFVho3x1moGAa3deMs+LS30CAhBN5nNxeT5hbJ1zwmji2k+aF6NENIPf/hs54f0sZFUVAMigAAAABJRU5ErkJggg==') 1x);
+  border: 0;
+  cursor: default;
+  display: inline-block;
+  height: 16px;
+  padding: 0;
+  width: 16px;
+}
+
+.close-button:hover,
+.close-button:focus {
+  background-image: -webkit-image-set(
+      url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAqUlEQVR4XqWRMQqEMBBF/1E8Ra6x6V3FRnS9QbCxtJg6Z7CzE9lTiIXXyUb3C8EULixDIMM8Zt4kcDfxM5A45U+cgeXnC1tREgkzAgob3hiq3CUHvGLG4FTQoSgxQGDrzN8WTLBGnx2IVDksen9GH7Z9hA5E6uxABMJyCHDMCEGHzugLQPPlBCBNGq+5YtpnGw1Bv+te15ypljTpVzdak5Opy+z+qf//zQ+Lg+07ay5KsgAAAABJRU5ErkJggg==') 1x);
+}
+
+.close-button:active {
+  background-image: -webkit-image-set(
+      url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAARElEQVQoz2P4z4AfMlBLAYMdwxkghgEwD1XBGTC0g0sDIaYJECVwFqoChBK4WegKkJWArSJZAQErCDqSKG/iCyhaRhYA9LDIbULDzlIAAAAASUVORK5CYII=')
+          1x,
+      url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAQAAADZc7J/AAAA/ElEQVR4Xu3UsWrCUBiG4efGlIBoIMFbcnYolYJ3pg4iKGrGYFTRwaUFhYAekiDt0EG++X2W83N8/3J/DbwBMJJSsdQItcDY1VlCOImzq3Ed8OmicHASB3ns5KBw8VUNpDJrW7uAiJ3sbK1l0mqArpmFTUlQ5jYWZrrUAUSmT0SZm4qoA56JvVhs/5g3A7RLolA85A1ASOTye65NMxASK6syfxGITMzvMxG9CvRkliWwlOm9AsSOcitzU1NzK7mjuBkQvHtLK7iLBiB5PhttJSGpB8I8vM6kDuiHeUjoVwMfYR4SRtUAw1veIZzOjRhSBzCoyKFjgH/3K7+BHzg+Cgw0eSW3AAAAAElFTkSuQmCC')
+          2x);
+}
+
+.link-button {
+  -webkit-margin-start: 0.5em;
+}
+
+#card-slider-frame {
+  /* Must match #footer height. */
+  bottom: 50px;
+  overflow: hidden;
+  /* We want this to fill the window except for the region used
+   * by footer. */
+  position: fixed;
+  top: 0;
+  width: 100%;
+}
+
+body.bare-minimum #card-slider-frame {
+  bottom: 0;
+}
+
+#page-list {
+  /* fill the apps-frame */
+  display: -webkit-box;
+  height: 100%;
+}
+
+#attribution {
+  bottom: 0;
+  left: auto;
+  margin-left: 8px;
+  /* Leave room for the scrollbar. */
+  margin-right: 13px;
+  position: absolute;
+  right: 0;
+  text-align: left;
+  z-index: -5;
+}
+
+/* For themes that right-align their images, we flip the attribution to the
+ * left to avoid conflicts. We also do this for bare-minimum mode since there
+ * can be conflicts with the recently closed menu. */
+html[themegravity='right'] #attribution,
+body.bare-minimum #attribution,
+html[dir='rtl'] #attribution {
+  left: 0;
+  right: auto;
+  text-align: right;
+}
+
+#attribution > span {
+  display: block;
+}
+
+#footer {
+  background-image: -webkit-linear-gradient(
+      rgba(242, 242, 242, 0.9), rgba(222, 222, 222, 0.9));
+  bottom: 0;
+  color: #7F7F7F;
+  font-size: 0.9em;
+  font-weight: bold;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  z-index: 5;
+}
+
+/* TODO(estade): remove this border hack and replace with a webkit-gradient
+ * border-image on #footer once WebKit supports border-image-slice.
+ * See https://bugs.webkit.org/show_bug.cgi?id=20127 */
+#footer-border {
+  height: 1px;
+}
+
+#footer-content {
+  -webkit-align-items: center;
+  -webkit-justify-content: space-between;
+  display: -webkit-flex;
+  height: 49px;
+}
+
+#footer-content > * {
+  margin: 0 9px;
+}
+
+#logo-img {
+  display: inline-block;
+  margin-top: 4px;
+  position: relative;
+}
+
+#promo-bubble-anchor {
+  height: 1px;
+  left: 0;
+  position: absolute;
+  top: 4px;
+  visibility: hidden;
+  width: 32px;
+}
+
+body.bare-minimum #footer {
+  background: transparent;
+  bottom: auto;
+  font-weight: normal;
+  position: absolute;
+  right: 0;
+}
+
+html[dir='rtl'] body.bare-minimum #footer {
+  left: 0;
+  right: auto;
+}
+
+body.bare-minimum #footer-border,
+body.bare-minimum #logo-img,
+body.bare-minimum #dot-list {
+  visibility: hidden;
+}
+
+.starting-up * {
+  -webkit-transition: none !important;
+}
+
+/* Login Status. **************************************************************/
+
+#login-container {
+  -webkit-box-shadow: none;
+  background: transparent none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  /* Leave room for the scrollbar. */
+  margin-left: 13px;
+  margin-right: 13px;
+  margin-top: 5px;
+  padding: 0;
+  position: fixed;
+  right: 0;
+  text-align: right;
+  top: 0;
+  z-index: 10;
+}
+
+html[dir='rtl'] #login-container {
+  left: 0;
+  right: auto;
+}
+
+.login-status-icon {
+  -webkit-padding-end: 37px;
+  background-position: right center;
+  background-repeat: no-repeat;
+  min-height: 27px;
+}
+
+html[dir='rtl'] .login-status-icon {
+  background-position-x: left;
+}
+
+.profile-name:hover,
+.link-span {
+  text-decoration: underline;
+}
+
+#login-status-bubble-contents {
+  font-size: 1.1em;
+}
+
+#login-status-message-container {
+  margin-bottom: 13px;
+}
+
+#login-status-learn-more {
+  display: inline-block;
+}
+
+.login-status-row {
+  -webkit-box-align: center;
+  -webkit-box-orient: horizontal;
+  -webkit-box-pack: end;
+  display: -webkit-box;
+}
+
+#login-status-advanced-container {
+  -webkit-box-flex: 1;
+}
+
+#login-status-dismiss {
+  min-width: 6em;
+}
+
+/* Trash. *********************************************************************/
+
+#trash {
+  -webkit-padding-start: 10px;
+  -webkit-transition: top 200ms, opacity 0;
+  -webkit-transition-delay: 0, 200ms;
+  color: #222;
+  height: 100%;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 50px;
+  width: auto;
+}
+
+html[dir='rtl'] #trash {
+  left: 0;
+  right: auto;
+}
+
+#footer.showing-trash-mode #trash {
+  -webkit-transition-delay: 0, 0;
+  -webkit-transition-duration: 0, 200ms;
+  opacity: 0.75;
+  top: 0;
+}
+
+#footer.showing-trash-mode #trash.drag-target {
+  opacity: 1;
+}
+
+#trash > .trash-text {
+  -webkit-padding-end: 7px;
+  -webkit-padding-start: 30px;
+  border: 1px dashed #7f7f7f;
+  border-radius: 4px;
+  display: inline-block;
+  padding-bottom: 9px;
+  padding-top: 10px;
+  position: relative;
+  top: 7px;
+}
+
+#trash > .lid,
+#trash > .can {
+  left: 18px;
+  top: 18px;
+}
+
+html[dir='rtl'] #trash > .lid,
+html[dir='rtl'] #trash > .can {
+  right: 18px;
+}
+
+#footer.showing-trash-mode #trash.drag-target .lid {
+  -webkit-transform: rotate(-45deg);
+}
+
+html[dir='rtl'] #footer.showing-trash-mode #trash.drag-target .lid {
+  -webkit-transform: rotate(45deg);
+}
+
+#fontMeasuringDiv {
+  /* The font attributes match the nav inputs. */
+  font-size: 0.9em;
+  font-weight: bold;
+  pointer-events: none;
+  position: absolute;
+  visibility: hidden;
+}
+
+/* Page switcher buttons. *****************************************************/
+
+.page-switcher {
+  -webkit-transition: width 150ms, right 150ms, background-color 150ms;
+  background-color: transparent;
+  border: none;
+  bottom: 0;
+  font-size: 40px;
+  margin: 0;
+  max-width: 150px;
+  min-width: 90px;
+  outline: none;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  z-index: 5;
+}
+
+/* Footer buttons. ************************************************************/
+
+#chrome-web-store-link {
+  -webkit-order: 3;
+  -webkit-padding-end: 12px;
+  /* Match transition delay of recently closed button. */
+  -webkit-transition-delay: 100ms;
+  color: inherit;
+  cursor: pointer;
+  display: inline-block;
+  margin: 0;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+#chrome-web-store-title {
+  -webkit-padding-end: 36px;
+  -webkit-padding-start: 15px;
+  background: url('$EXTENSION_URLIDR_WEBSTORE_ICON_24.png') right 50% no-repeat;
+  display: inline-block;
+  line-height: 49px;
+}
+
+#chrome-web-store-link:hover {
+  color: #666;
+}
+
+html[dir='rtl'] #chrome-web-store-title {
+  background-position-x: left;
+}
+
+#vertical-separator {
+  -webkit-order: 2;
+  background-color: rgb(178, 178, 178);
+  display: none;
+  height: 20px;
+  margin: 0;
+  vertical-align: middle;
+  width: 1px;
+}
+
+/* Show the separator only if one of the menus is visible. */
+.footer-menu-button:not([hidden]) ~ #chrome-web-store-link:not([hidden])
+                                  ~ #vertical-separator {
+  display: inline-block;
+}
+
+/* In trash mode, hide the menus and web store link. */
+#footer.showing-trash-mode .menu-container {
+  -webkit-transition-delay: 0;
+  opacity: 0;
+  visibility: hidden;
+}
+
+#footer .menu-container {
+  -webkit-align-items: center;
+  -webkit-flex-direction: row;
+  -webkit-justify-content: flex-end;
+  /* Put menus in a box so the order can easily be swapped. */
+  display: -webkit-flex;
+  height: 100%;
+  margin: 0;
+  min-width: -webkit-min-content;
+}
+
+#recently-closed-menu-button {
+  -webkit-order: 1;
+}
+
+#other-sessions-menu-button {
+  -webkit-order: 0;
+}
+
+.other-sessions-promo-message {
+  display: none;
+  padding: 0;
+}
+
+.other-sessions-promo-message:only-child {
+  display: block;
+}
+
+.other-sessions-promo-message p {
+  margin: 0;
+}
+</style>
+<style>/* Copyright (c) 2012 The Chromium Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file. */
+
+.footer-menu-button {
+  -webkit-appearance: none;
+  -webkit-padding-end: 15px;
+  -webkit-padding-start: 9px;
+  -webkit-transition: opacity 200ms;
+  -webkit-transition-delay: 100ms;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: block;
+  font: inherit;
+  height: 100%;
+  margin: 0;
+  /* The padding increases the clickable area. */
+  padding-bottom: 0;
+  padding-top: 0;
+  white-space: nowrap;
+}
+
+.footer-menu-button:hover:not([menu-shown]) {
+  color: #666;
+}
+
+.footer-menu-button:hover:not([menu-shown]) .disclosure-triangle {
+  background-color: #666;
+}
+
+.footer-menu-button[menu-shown] {
+  color: #555;
+}
+
+.footer-menu-button[menu-shown] .disclosure-triangle {
+  background-color: #555;
+}
+
+.footer-menu {
+  -webkit-margin-end: 10px;
+  max-height: 400px;
+  overflow: auto;
+  padding: 6px 8px;
+  /* Needs to be above #footer. */
+  z-index: 10;
+}
+
+.footer-menu,
+.footer-menu-context-menu {
+  min-width: 150px;
+}
+
+/* TODO(dubroy): Unify this with tile page scrollbar. */
+.footer-menu::-webkit-scrollbar-button {
+  display: none;
+}
+
+.footer-menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+.footer-menu::-webkit-scrollbar-thumb {
+  background-color: #D9D9D9;
+  border: 2px solid white;
+}
+
+.footer-menu-item {
+  -webkit-margin-end: 8px;
+  -webkit-margin-start: 0;
+  -webkit-padding-end: 0;
+  -webkit-padding-start: 22px;
+  background: no-repeat 0 50%;
+  background-color: transparent !important;
+  background-size: 16px 16px;
+  box-sizing: border-box;
+  display: block;
+  line-height: 1.5em;
+  margin-bottom: 0.5em;
+  margin-top: 0.5em;
+  max-width: 450px;
+  outline: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footer-menu-item:not(:hover),
+.footer-menu-item:not(:focus) {
+  text-decoration: none;
+}
+
+.footer-menu-item:hover,
+.footer-menu-item:focus {
+  text-decoration: underline;
+}
+
+.footer-menu-item:first-of-type {
+  margin-top: 0.25em;
+}
+
+.footer-menu-item:last-of-type {
+  margin-bottom: 0.25em;
+}
+
+.footer-menu section {
+  padding: 0;
+}
+
+.footer-menu section h3 {
+  color: black;
+  font-size: 1em;
+  font-weight: bold;
+  margin-bottom: 0.5em;
+}
+
+.footer-menu section:first-of-type h3 {
+  margin-top: 0.25em;
+}
+
+/* Used to add additional details to a section header */
+.footer-menu section h3 .details {
+  color: rgb(151, 156, 160);
+  font-style: italic;
+  font-weight: normal;
+}
+
+.footer-menu section h3 .details::before {
+  content: '\2013';  /* En-dash character. */
+  margin: 0 0.5em;
+}
+
+html[dir='rtl'] .footer-menu-item {
+  background: no-repeat 100% 50%;
+}
+
+.recent-window {
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAL0lEQVQokWM4cfjEfzzwMANeaSAEK4CBE/+fQSGKAmSAqQRNAToYVUBNBfij+wgAQxDqTSvyVa0AAAAASUVORK5CYII=');
+}
+
+/* TODO(estade): find a better color for active. */
+.footer-menu-item:active,
+.footer-menu-item:visited,
+.footer-menu-item:link {
+  color: hsl(213, 90%, 24%) !important;
+}
+
+.disclosure-triangle {
+  -webkit-margin-start: 2px;
+  -webkit-mask-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAAJUlEQVQYV2NgoDuYSQSGK/RB0+yDrACbQqwKkBUW41OArJB0AAACXws0ERupuAAAAABJRU5ErkJggg==');
+  background-color: #7F7F7F;
+  display: inline-block;
+  height: 9px;
+  width: 9px;
+}
+
+.footer-menu-context-menu {
+  /* Needs to be above .footer-menu. */
+  z-index: 11;
+}
+
+.footer-menu hr {
+  background-color: rgb(217, 217, 217);
+  border: 0;
+  height: 1px;
+}
+</style>
+<style>/* Copyright (c) 2012 The Chromium Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file. */
+
+.tile-page {
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+  height: 100%;
+  position: relative;
+  width: 100%;
+}
+
+.tile-page-scrollbar {
+  -webkit-box-sizing: border-box;
+  margin: 0 4px;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  width: 5px;
+  z-index: 5;
+}
+
+.tile-page-content {
+  -webkit-box-flex: 1;
+  /* Don't apply clip mask to padding. */
+  -webkit-mask-clip: content-box;
+  /* TODO(estade): this mask is disabled for technical reasons. It negatively
+   * impacts performance of page switching, also it causes problems with Mac
+   * text: http://crbug.com/86955
+  -webkit-mask-image: -webkit-linear-gradient(bottom, transparent, black 30px);
+  */
+  /* The following four properties are necessary so that the mask won't clip
+   * the scrollbar. */
+  box-sizing: border-box;
+  overflow-y: scroll;
+  /* Scrollbar width(13px) + balance right padding.  */
+  padding-left: 93px;
+  padding-right: 80px;
+  /* This value is mirrored in TilePage.updateTopMargin_ */
+  padding-top: 60px;
+  position: relative;
+  text-align: center;
+  width: 100%;
+}
+
+.top-margin {
+  /* The only reason height is set to 1px, rather than left at 0, is that
+   * otherwise webkit collapses the top and bottom margins. */
+  height: 1px;
+}
+
+.tile-grid {
+  position: relative;
+  width: 100%;
+}
+
+.tile {
+  -webkit-print-color-adjust: exact;
+  /* Don't offer the context menu on long-press. */
+  -webkit-touch-callout: none;
+  -webkit-user-drag: element;
+  display: inline-block;
+  position: absolute;
+}
+
+/* NOTE: Dopplegangers nest themselves inside of other tiles, so don't
+ * accidentally double apply font-size to them. */
+.tile:not(.doppleganger) {
+  font-size: 1.2em;
+}
+
+/* Not real but not a doppleganger: show nothing. This state exists for a
+ * webstore tile that's on the same page as a [+]. */
+.tile:not(.real):not(.doppleganger) {
+  display: none;
+}
+
+/* I don't know why this is necessary. -webkit-user-drag: element on .tile
+ * should be enough. If we don't do this, we get 2 drag representations for
+ * the image. */
+.tile img {
+  -webkit-user-drag: none;
+}
+
+.doppleganger {
+  left: 0 !important;
+  right: 0 !important;
+  top: 0 !important;
+}
+
+.tile.dragging {
+  opacity: 0;
+}
+
+.tile.drag-representation {
+  -webkit-transition: opacity 200ms;
+  pointer-events: none;
+  position: fixed;
+  z-index: 3;
+}
+
+.tile.drag-representation.placing > * {
+  -webkit-transition: -webkit-transform 200ms;
+}
+
+/* When a drag finishes while we're not showing the page where the tile
+ * belongs, the tile shrinks to a dot. */
+.tile.drag-representation.dropped-on-other-page > * {
+   -webkit-transform: scale(0) rotate(0);
+}
+
+.tile.drag-representation.deleting > * {
+  -webkit-transform: scale(0) rotate(360deg);
+  -webkit-transition: -webkit-transform 600ms;
+}
+
+.animating-tile-page .tile,
+.tile.drag-representation.placing {
+  -webkit-transition: left 200ms, right 200ms, top 200ms;
+}
+
+.hovering-on-trash {
+  opacity: 0.6;
+}
+
+.animating-tile-page .top-margin {
+  -webkit-transition: margin-bottom 200ms;
+}
+
+.animating-tile-page #notification-container {
+  -webkit-transition: margin 200ms, opacity 200ms;
+}
+
+@-webkit-keyframes bounce {
+  0% {
+    -webkit-transform: scale(0, 0);
+  }
+
+  60% {
+    -webkit-transform: scale(1.2, 1.2);
+  }
+
+  100% {
+    -webkit-transform: scale(1, 1);
+  }
+}
+
+.tile > .new-tile-contents {
+  -webkit-animation: bounce 500ms ease-in-out;
+}
+
+@-webkit-keyframes blipout {
+  0% {
+    -webkit-transform: scale(1, 1);
+  }
+
+  60% {
+    -webkit-animation-timing-function: ease-in;
+    -webkit-transform: scale(1.3, 0.02);
+    opacity: 1;
+  }
+
+  90% {
+    -webkit-transform: scale(0.3, 0.02);
+    opacity: 0.7;
+  }
+
+  100% {
+    -webkit-animation-timing-function: linear;
+    -webkit-transform: scale(0.3, 0.02);
+    opacity: 0;
+  }
+}
+
+.tile > .removing-tile-contents {
+  -webkit-animation: blipout 300ms;
+  -webkit-animation-fill-mode: forwards;
+  pointer-events: none;
+}
+
+.tile-page:not(.selected-card) * {
+  -webkit-transition: none !important;
+}
+
+/** Scrollbars ****************************************************************/
+
+.tile-page-content::-webkit-scrollbar {
+  width: 13px;
+}
+
+.tile-page-content::-webkit-scrollbar-button {
+  display: none;
+}
+</style>
+<link id="themecss" rel="stylesheet">
+
+</head>
+
+<body i18n-values=".style.fontFamily:fontfamily;.style.fontSize:fontsize">
+  <div id="notification-container" class="inactive" hidden>
+    <div id="notification">
+      <span></span>
+      <div id="notificationLinks"></div>
+      <button class="close-button custom-appearance" class="custom-appearance">
+      </button>
+    </div>
+  </div>
+
+  <div id="card-slider-frame">
+    <button id="page-switcher-start" class="page-switcher custom-appearance"
+        tabindex="2" hidden>‹
+    </button>
+    <div id="page-list"></div>
+    <button id="page-switcher-end" class="page-switcher custom-appearance"
+        tabindex="2" hidden>›
+    </button>
+    <div id="attribution">
+      <span i18n-content="attributionintro"></span>
+      <img id="attribution-img">
+    </div>
+  </div>
+
+  <div id="app-launcher-promo" hidden>
+    <div class="apps-promo-text" i18n-content="appsPromoTitle"></div>
+    <a href="https://chrome.google.com/webstore/launcher"
+       id="apps-promo-learn-more" class="apps-promo-learn-more"
+       i18n-content="learn_more">
+    </a>
+    <img src="data:image/png;base64,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">
+    <button class="close-button custom-appearance"
+            id="app-launcher-promo-close-button">
+    </button>
+  </div>
+
+  <div id="footer">
+    <div id="footer-border"></div>
+    <div id="footer-content">
+      <div id="logo-img">
+        <img alt="" src="$EXTENSION_URLIDR_PRODUCT_LOGO.png">
+        <div id="promo-bubble-anchor"></div>
+      </div>
+
+      <ul id="dot-list">
+      </ul>
+
+      <div id="footer-menu-container" class="menu-container">
+        <button id="other-sessions-menu-button"
+            class="footer-menu-button custom-appearance" hidden>
+          <span i18n-content="otherSessions"></span>
+          <div class="disclosure-triangle"></div>
+        </button>
+        <button id="recently-closed-menu-button"
+            class="footer-menu-button custom-appearance" hidden>
+          <span i18n-content="recentlyclosed"></span>
+          <div class="disclosure-triangle"></div>
+        </button>
+        <a id="chrome-web-store-link">
+          <span id="chrome-web-store-title" i18n-content="webStoreTitleShort">
+          </span>
+        </a>
+        <div id="vertical-separator"></div>
+      </div>
+
+      <div id="trash" class="trash">
+        <span class="lid"></span>
+        <span class="can"></span>
+        <span class="trash-text" i18n-content="appuninstall"></span>
+      </div>
+    </div>
+  </div>
+
+  <button id="login-container" class="custom-appearance" hidden>
+    <div id="login-status-header-container" class="login-status-row">
+      <div id="login-status-header"></div>
+    </div>
+    <div id="login-status-sub-header"></div>
+  </button>
+</body>
+
+<!-- A div to hold all the templates, and in the darkness bind them. -->
+<div hidden>
+
+<!-- Login status bubble -->
+<div id="login-status-bubble-contents">
+  <div id="login-status-message-container">
+    <span i18n-content="login_status_message"></span>
+    <a id="login-status-learn-more" i18n-content="learn_more"
+        i18n-values="href:login_status_url" target="_blank"></a>
+  </div>
+  <div class="login-status-row">
+    <div id="login-status-advanced-container">
+      <a id="login-status-advanced"
+          i18n-content="login_status_advanced" href="#"></a>
+    </div>
+    <button id="login-status-dismiss" i18n-content="login_status_dismiss">
+    </button>
+  </div>
+</div>
+
+<!-- App Contents w/ Large Icon -->
+<div id="app-large-icon-template" class="app-contents">
+  <div class="app-img-container" aria-hidden="true">
+    <img class="invisible" alt="">
+  </div>
+  <span class="title"></span>
+</div>
+
+<!-- App Contents w/ Small Icon -->
+<div id="app-small-icon-template" class="app-contents">
+  <div class="app-icon-div" aria-hidden="true">
+    <div class="app-img-container">
+      <img class="invisible" alt="">
+    </div>
+    <div class="color-stripe"></div>
+  </div>
+  <span class="title"></span>
+</div>
+
+<!-- Message shown in the other sessions menu when the user is signed in but
+     there is no session data (e.g. they have tab sync turned off). -->
+<div id="other-sessions-promo-template" class="other-sessions-promo-message">
+  <span i18n-content="otherSessionsEmpty"></span>
+  <p>
+    <a i18n-values="href:otherSessionsLearnMoreUrl" i18n-content="learnMore">
+    </a>
+  </p>
+</div>
+
+</div>
+
+<!-- This is used to measure text in the current locale. It is not visible. -->
+<div id="fontMeasuringDiv"></div>
+
+</html>
+
+<script src="$EXTENSION_URLallscripts.js"></script>

@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "New Tab Reloaded",
+    "description": "Extension Name"
+  },
+  "extDesc": {
+    "message": "Revert to the previous new tab page. Remove the instant extended search bars for chrome 33+!",
+    "description": "Extension Description"
+  },
+  "extShortName": {
+    "message": "Previous New Tab page for Chrome 33+!",
+    "description": "Extension Short Description"
+  }
+}

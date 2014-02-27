@@ -1,0 +1,44 @@
+{
+  "manifest_version": 2,
+  "name": "__MSG_extName__",
+  "description": "__MSG_extDesc__",
+  "short_name": "__MSG_extShortName__",
+  "version": "0.0.2",
+  
+  "default_locale": "en",
+  "icons": {
+    "200": "icon200.png",
+    "128": "icon128.png",
+    "19":"icon19.png"
+  },
+  
+  "author": "Jingyi Wei",
+  
+  "background": {
+    "persistent": false,
+    "scripts": [ "background.js" ]
+  },
+  
+  "content_scripts": [
+    {
+      "matches": [ "https://www.google.com/_/chrome/*" ],
+      "js": [ "setnewtab.js" ],
+      "run_at": "document_idle"
+    }
+  ],
+  
+  "web_accessible_resources": [
+    "newtab.htm",
+    "allscripts.js",
+    "trash.png",
+    "IDR_PRODUCT_LOGO.png",
+    "IDR_WEBSTORE_ICON_24.png",
+    "suggestions_page.css",
+    "new_tab_theme.css"
+  ],
+  
+  "permissions": ["topSites", "chrome://favicon/"],
+  "incognito": "split",
+  
+  "minimum_chrome_version" : "33"
+}
