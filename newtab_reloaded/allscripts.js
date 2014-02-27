@@ -9912,7 +9912,8 @@ cr.define('ntp', function() {
     if (loadTimeData.getBoolean('showMostvisited'))
       sectionsToWaitFor++;
     if (loadTimeData.getBoolean('showApps')) {
-      sectionsToWaitFor++;
+      // Apps are not supported yet.
+      //sectionsToWaitFor++;
       if (loadTimeData.getBoolean('showAppLauncherPromo')) {
         $('app-launcher-promo-close-button').addEventListener('click',
             function() { chrome.send('stopShowingAppLauncherPromo'); });
@@ -10167,17 +10168,7 @@ cr.define('ntp', function() {
   }
 
   function themeChanged(opt_hasAttribution) {
-    var currentScript = document.getElementsByTagName('script');
-    var i;
-    for (i = 0; i < currentScript.length; i++)
-      if (currentScript[i].src.indexOf('chrome-extension') == 0)
-        break;
-
-    currentScript = currentScript[i];
-    var extensionUrl = currentScript.src;
-    var extensionHost = extensionUrl.substring(0, extensionUrl.lastIndexOf("/") + 1);
-
-    $('themecss').href = extensionHost + 'new_tab_theme.css?' + Date.now();
+    $('themecss').href = 'chrome-search://theme/css/new_tab_theme.css?' + Date.now();
 
     if (typeof opt_hasAttribution != 'undefined') {
       document.documentElement.setAttribute('hasattribution',
@@ -11140,6 +11131,58 @@ var i18nTemplate = (function() {
 
 
 i18nTemplate.process(document, loadTimeData);
+
+
+// Copied from chrome-search://most-visited/util.js
+/**
+ * Validates a RGBA color component. It must be a number between 0 and 255.
+ * @param {number} component An RGBA component.
+ * @return {boolean} True if the component is valid.
+ */
+function isValidRBGAComponent(component) {
+  return isFinite(component) && component >= 0 && component <= 255;
+}
+
+/**
+ * Converts an Array of color components into RGBA format "rgba(R,G,B,A)".
+ * @param {Array.<number>} rgbaColor Array of rgba color components.
+ * @return {?string} CSS color in RGBA format or null if invalid.
+ */
+function convertArrayToRGBAColor(rgbaColor) {
+  // Array must contain 4 valid components.
+  if (rgbaColor instanceof Array && rgbaColor.length === 4 &&
+      isValidRBGAComponent(rgbaColor[0]) &&
+      isValidRBGAComponent(rgbaColor[1]) &&
+      isValidRBGAComponent(rgbaColor[2]) &&
+      isValidRBGAComponent(rgbaColor[3])) {
+    return 'rgba(' +
+            rgbaColor[0] + ',' +
+            rgbaColor[1] + ',' +
+            rgbaColor[2] + ',' +
+            rgbaColor[3] / 255 + ')';
+  }
+  return null;
+}
+// End Copied from chrome-search://most-visited/util.js
+
+var updateTheme = function() {
+  var color = 'rgba(24,74,183,1)';
+  var themeInfo = chrome.embeddedSearch.newTabPage.themeBackgroundInfo;
+
+  if (themeInfo.usingDefaultTheme)
+    document.body.style.backgroundImage = '';
+  else {
+    document.body.style.backgroundImage = themeInfo.imageUrl;
+    color = convertArrayToRGBAColor(themeInfo.textColorRgba) || color;
+  }
+
+  var pageTitles = document.getElementsByClassName('title');
+  for (var i = 0; i < pageTitles.length; i++)
+    pageTitles[i].style.color = color;
+};
+
+document.addEventListener('ntpLoaded', updateTheme);
+document.body.onfocus = updateTheme;
 
 // Duplicate with loadTimeData.js
 window.addEventListener("message", function(event) {
