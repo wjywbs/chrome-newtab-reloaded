@@ -1,29 +1,3 @@
-/*
-chrome.webNavigation.onCompleted.addListener(function(data) {
-  console.log(data);
-  if (data.url == "chrome://apps/") {
-    //chrome.tabs.update(
-    //chrome.tabs.executeScript({ code: "alert('d');console.log('apps ok');" }); //  file: "loadTimeData.js"
-  //  console.log("apps");
-  }
-  // data.tabId, 
-});
-*/
-
-var topsites;
-chrome.topSites.get(function(data) {
-  topsites = data;
-  console.log("Got topSites");
-});
-
-chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-    if (sender.tab && sender.tab.url == "chrome://apps/" && request.method == "topSites") {
-      sendResponse(topsites);
-      console.log("Sent topSites response for apps tab");
-    }
-  }
-);
 
 chrome.runtime.onConnect.addListener(function(port) {
   if (port.name != "newtabreloaded") {
