@@ -19,6 +19,18 @@ if (chrome.send == undefined) {
       chrome.embeddedSearch.newTabPage.navigateContentWindow(args[0]);
       // NOT REACHED
       break;
+    case "blacklistURLFromMostVisited":
+      chrome.embeddedSearch.newTabPage.deleteMostVisitedItem(args[0]);
+      method += " implemented!";
+      break;
+    case "removeURLsFromMostVisitedBlacklist":
+      chrome.embeddedSearch.newTabPage.undoMostVisitedDeletion(args[0]);
+      method += " implemented!";
+      break;
+    case "clearMostVisitedURLsBlacklist":
+      chrome.embeddedSearch.newTabPage.undoAllMostVisitedDeletions();
+      method += " implemented!";
+      break;
     }
     console.log("chrome.send stub: " + method);
   }
@@ -8049,6 +8061,12 @@ cr.define('ntp', function() {
      * @param {Object} ntpMostVisitedData Data from chrome.embeddedSearch.newTabPage.
      */
     updateForData: function(data, ntpMostVisitedData) {
+      // Handle call from removeURLsFromMostVisitedBlacklist
+      if (ntpMostVisitedData == undefined && data.ntpData != undefined)
+        ntpMostVisitedData = data.ntpData;
+      else
+        data.ntpData = ntpMostVisitedData;
+
       if (this.classList.contains('blacklisted') && data) {
         // Animate appearance of new tile.
         this.classList.add('new-tile-contents');
@@ -8063,6 +8081,7 @@ cr.define('ntp', function() {
 
       var id = tileID++;
       this.id = 'most-visited-tile-' + id;
+      data.restrictedId = ntpMostVisitedData.rid;
       this.data_ = data;
       this.classList.add('focusable');
 
@@ -8157,7 +8176,7 @@ cr.define('ntp', function() {
      */
     blacklist_: function() {
       this.showUndoNotification_();
-      chrome.send('blacklistURLFromMostVisited', [this.data_.url]);
+      chrome.send('blacklistURLFromMostVisited', [this.data_.restrictedId]);
       this.reset();
       chrome.send('getMostVisited');
       this.classList.add('blacklisted');
@@ -8167,7 +8186,7 @@ cr.define('ntp', function() {
       var data = this.data_;
       var self = this;
       var doUndo = function() {
-        chrome.send('removeURLsFromMostVisitedBlacklist', [data.url]);
+        chrome.send('removeURLsFromMostVisitedBlacklist', [data.restrictedId]);
         self.updateForData(data);
       }
 
@@ -8179,6 +8198,8 @@ cr.define('ntp', function() {
       var undoAll = {
         action: function() {
           chrome.send('clearMostVisitedURLsBlacklist');
+          self.reset();
+          chrome.send('getMostVisited');
         },
         text: loadTimeData.getString('restoreThumbnailsShort'),
       };
