@@ -8422,6 +8422,9 @@ cr.define('ntp', function() {
     oldData = oldData.slice(0, THUMBNAIL_COUNT);
     newData = newData.slice(0, THUMBNAIL_COUNT);
 
+    // Fix topSite and ntpMostVisited out of sync
+    return newData;
+
     // Copy over pinned sites directly.
     for (var j = 0; j < newData.length; j++) {
       if (newData[j].pinned) {
