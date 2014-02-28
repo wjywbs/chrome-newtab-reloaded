@@ -8422,7 +8422,7 @@ cr.define('ntp', function() {
     oldData = oldData.slice(0, THUMBNAIL_COUNT);
     newData = newData.slice(0, THUMBNAIL_COUNT);
 
-    // Fix topSite and ntpMostVisited out of sync
+    // Fix topSite and ntpMostVisited out of sync.
     return newData;
 
     // Copy over pinned sites directly.
@@ -11199,6 +11199,11 @@ var updateTheme = function() {
     document.body.style.backgroundImage = '';
   else {
     document.body.style.backgroundImage = themeInfo.imageUrl;
+    document.body.style.backgroundRepeat = themeInfo.imageTiling + " " + themeInfo.imageTiling;
+    if (themeInfo.imageTiling == "repeat")
+      document.body.style.backgroundPosition = "50% 50%";
+    else
+      document.body.style.backgroundPosition = "50% 0%";
     color = convertArrayToRGBAColor(themeInfo.textColorRgba) || color;
   }
 
