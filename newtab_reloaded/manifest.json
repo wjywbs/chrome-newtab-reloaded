@@ -232,7 +232,7 @@
     "suggestions_page.css"
   ],
   
-  "permissions": ["topSites", "chrome://favicon/"],
+  "permissions": ["topSites", "chrome://favicon/", "sessions", "tabs"],
   "incognito": "split",
   
   "minimum_chrome_version" : "33"
