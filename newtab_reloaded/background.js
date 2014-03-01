@@ -6,12 +6,15 @@ chrome.runtime.onConnect.addListener(function(port) {
   }
 
   port.onMessage.addListener(function(request) {
-    if (request.method == "topSites") {
+    switch (request.method) {
+    case "topSites":
       chrome.topSites.get(function(data) {
         port.postMessage({ method: "topSitesResult", result: data});
         console.log("Sent topSites response");
       });
-    } else if (request.method == "dominantColor") {
+      break;
+
+    case "dominantColor":
       RGBaster.colors(request.url, function(colorResult) {
         port.postMessage({
           method: "dominantColorResult",
@@ -19,10 +22,46 @@ chrome.runtime.onConnect.addListener(function(port) {
         });
         console.log("Sent dominantColor response");
       });
+      break;
+
+    case "getRecentlyClosed":
+      chrome.sessions.getRecentlyClosed(function(data) {
+        port.postMessage({ method: "recentlyClosedResult", result: data});
+      });
+      console.log("Sent recentlyClosed response");
+      break;
+
+    case "reopenTab":
+      chrome.sessions.restore(request.id);
+      break;
+
+    case "_getFaviconImage":
+      getFaviconImage(request.url, function(data) {
+        port.postMessage({
+          method: "_setFaviconImage",
+          result: { data: data, id: request.id }
+        });
+      });
+      console.log("Sent _getFaviconImage response");
+      break;
     }
   });
 });
 
+function getFaviconImage(url, callback) {
+  var img = new Image();
+  img.src = url;
+  img.crossOrigin = "Anonymous";
+  img.onload = function() {
+    var canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+
+    var context = canvas.getContext('2d');
+    context.drawImage(img, 0, 0);
+    callback(canvas.toDataURL("image/png"));
+  };
+}
 
 // Merged RGBaster from: https://github.com/briangonzalez/rgbaster.js
   var getContext = function(){

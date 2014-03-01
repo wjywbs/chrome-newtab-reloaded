@@ -31,6 +31,18 @@ if (chrome.send == undefined) {
       chrome.embeddedSearch.newTabPage.undoAllMostVisitedDeletions();
       method += " implemented!";
       break;
+    case "getRecentlyClosedTabs":
+      window.postMessage({ method: "getRecentlyClosed" }, "*");
+      method += " implemented!";
+      break;
+    case "reopenTab":
+      window.postMessage({ method: "reopenTab", id: args[0] }, "*");
+      method += " implemented!";
+      break;
+    case "_getFaviconImage":
+      window.postMessage({ method: "_getFaviconImage", url: args[0], id: args[1] }, "*");
+      method += " custom command implemented!";
+      break;
     }
     console.log("chrome.send stub: " + method);
   }
@@ -10606,6 +10618,7 @@ cr.define('ntp', function() {
       var isWindow = data.type == 'window';
       var a = this.ownerDocument.createElement('a');
       a.className = 'footer-menu-item';
+      a.id = 'footer-menu-item-' + data.sessionId;
       if (isWindow) {
         a.href = '';
         a.classList.add('recent-window');
@@ -10613,7 +10626,8 @@ cr.define('ntp', function() {
         a.title = data.tabs.map(function(tab) { return tab.title; }).join('\n');
       } else {
         a.href = data.url;
-        a.style.backgroundImage = getFaviconImageSet(data.url);
+        chrome.send('_getFaviconImage',
+                    [getFaviconUrlForCurrentDevicePixelRatio(data.url), a.id]);
         a.textContent = data.title;
       }
 
@@ -11235,8 +11249,23 @@ window.addEventListener("message", function(event) {
   if (event.data.method == "topSitesResult") {
     topsite = event.data.result;
     setTopSite();
-  } else if (event.data.method == "dominantColorResult")
+  } else if (event.data.method == "dominantColorResult") {
     ntp.setFaviconDominantColor(event.data.result.id, event.data.result.dominantColor);
+  } else if (event.data.method == "recentlyClosedResult") {
+    // Process the result to fit the previous format.
+    var result = event.data.result;
+    for (var i = 0; i < result.length; i++) {
+      if (result[i].window) {
+        result[i] = result[i].window;
+        result[i].type = "window";
+      } else
+        result[i] = result[i].tab;
+    }
+    ntp.setRecentlyClosedTabs(result);
+  } else if (event.data.method == "_setFaviconImage") {
+    document.getElementById(event.data.result.id).style.backgroundImage =
+      "url('" + event.data.result.data + "')";
+  }
 }, false);
 
 // Manually call onLoad

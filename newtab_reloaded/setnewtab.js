@@ -2,8 +2,14 @@ var loaded = false;
 
   var port = chrome.runtime.connect({name: "newtabreloaded"});
   port.onMessage.addListener(function(response) {
-    if (response.method == "topSitesResult" || response.method == "dominantColorResult")
+    switch (response.method) {
+    case "topSitesResult":
+    case "dominantColorResult":
+    case "recentlyClosedResult":
+    case "_setFaviconImage":
       window.postMessage({ method: response.method, result: response.result }, "*");
+      break;
+    }
   });
 
   var xhr = new XMLHttpRequest();
@@ -16,10 +22,18 @@ var loaded = false;
     document.write(xhr.responseText.replace(new RegExp("\\$EXTENSION_URL", "g"), chrome.extension.getURL("")));
 
     window.addEventListener("message", function(event) {
-      if (event.data.method == "topSites") {
-        port.postMessage({ method: "topSites" });
-      } else if (event.data.method == "dominantColor") {
-        port.postMessage({ method: "dominantColor", url: event.data.url, id: event.data.id });
+      switch (event.data.method) {
+      case "topSites":
+      case "getRecentlyClosed":
+        port.postMessage({ method: event.data.method });
+        break;
+      case "dominantColor":
+      case "_getFaviconImage":
+        port.postMessage({ method: event.data.method, url: event.data.url, id: event.data.id });
+        break;
+      case "reopenTab":
+        port.postMessage({ method: event.data.method, id: event.data.id });
+        break;
       }
     }, false);
   }
