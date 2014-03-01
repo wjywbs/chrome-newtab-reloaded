@@ -11213,7 +11213,7 @@ var updateTheme = function() {
 };
 
 document.addEventListener('ntpLoaded', updateTheme);
-document.body.onfocus = updateTheme;
+chrome.embeddedSearch.newTabPage.onthemechange = updateTheme;
 
 
 var retryCount = 0, retryInterval = 50;
