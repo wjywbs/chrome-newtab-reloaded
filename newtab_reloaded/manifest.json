@@ -3,7 +3,7 @@
   "name": "__MSG_extName__",
   "description": "__MSG_extDesc__",
   "short_name": "__MSG_extShortName__",
-  "version": "0.0.5",
+  "version": "0.0.5.2",
   
   "default_locale": "en",
   "icons": {
@@ -61,7 +61,7 @@
         "https://www.google.cg/_/chrome/*",
         "https://www.google.ch/_/chrome/*",
         "https://www.google.ci/_/chrome/*",
-        "https://www.google.ck/_/chrome/*",
+        "https://www.google.co.ck/_/chrome/*",
         "https://www.google.cl/_/chrome/*",
         "https://www.google.cm/_/chrome/*",
         "https://www.google.com.co/_/chrome/*",
@@ -229,7 +229,8 @@
     "newtab.htm",
     "allscripts.js",
     "trash.png",
-    "suggestions_page.css"
+    "suggestions_page.css",
+    "moment-with-langs.min.js"
   ],
   
   "permissions": ["topSites", "chrome://favicon/", "sessions", "tabs"],

@@ -1,4 +1,9 @@
 
+var languages;
+chrome.i18n.getAcceptLanguages(function(data) {
+  languages = data;
+});
+
 chrome.runtime.onConnect.addListener(function(port) {
   if (port.name != "newtabreloaded") {
     port.disconnect();
@@ -32,6 +37,7 @@ chrome.runtime.onConnect.addListener(function(port) {
       break;
 
     case "reopenTab":
+    case "openForeignSession":
       chrome.sessions.restore(request.id);
       break;
 
@@ -43,6 +49,15 @@ chrome.runtime.onConnect.addListener(function(port) {
         });
       });
       console.log("Sent _getFaviconImage response");
+      break;
+
+    case "getForeignSessions":
+      chrome.sessions.getDevices(function(data) {
+        port.postMessage({
+          method: "foreignSessionsResult",
+          result: { data: data, languages: languages }
+        });
+      });
       break;
     }
   });

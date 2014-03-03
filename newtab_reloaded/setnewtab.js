@@ -7,6 +7,7 @@ var loaded = false;
     case "dominantColorResult":
     case "recentlyClosedResult":
     case "_setFaviconImage":
+    case "foreignSessionsResult":
       window.postMessage({ method: response.method, result: response.result }, "*");
       break;
     }
@@ -25,6 +26,7 @@ var loaded = false;
       switch (event.data.method) {
       case "topSites":
       case "getRecentlyClosed":
+      case "getForeignSessions":
         port.postMessage({ method: event.data.method });
         break;
       case "dominantColor":
@@ -32,6 +34,7 @@ var loaded = false;
         port.postMessage({ method: event.data.method, url: event.data.url, id: event.data.id });
         break;
       case "reopenTab":
+      case "openForeignSession":
         port.postMessage({ method: event.data.method, id: event.data.id });
         break;
       }

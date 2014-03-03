@@ -43,6 +43,14 @@ if (chrome.send == undefined) {
       window.postMessage({ method: "_getFaviconImage", url: args[0], id: args[1] }, "*");
       method += " custom command implemented!";
       break;
+    case "getForeignSessions":
+      window.postMessage({ method: "getForeignSessions" }, "*");
+      method += " implemented!";
+      break;
+    case "openForeignSession":
+      window.postMessage({ method: "openForeignSession", id: args[0] }, "*");
+      method += " implemented!";
+      break;
     }
     console.log("chrome.send stub: " + method);
   }
@@ -10480,6 +10488,12 @@ cr.define('ntp', function() {
     }
   }
 
+  function reloadForeignSessions() {
+    if (otherSessionsButton) {
+      otherSessionsButton.reloadForeignSessions();
+    }
+  }
+
   function getAppsCallback() {
     return newTabView.getAppsCallback.apply(newTabView, arguments);
   }
@@ -10519,6 +10533,7 @@ cr.define('ntp', function() {
     leaveRearrangeMode: leaveRearrangeMode,
     logTimeToClick: logTimeToClick,
     NtpFollowAction: NtpFollowAction,
+    reloadForeignSessions: reloadForeignSessions,
     saveAppPageName: saveAppPageName,
     setAppToBeHighlighted: setAppToBeHighlighted,
     setBookmarkBarAttached: setBookmarkBarAttached,
@@ -10879,12 +10894,13 @@ cr.define('ntp', function() {
           var tab = window.tabs[j];
           var a = doc.createElement('a');
           a.className = 'footer-menu-item';
+          a.id = 'footer-menu-item-' + tab.sessionId;
           a.textContent = tab.title;
           a.href = tab.url;
-          a.style.backgroundImage = getFaviconImageSet(tab.url);
+          chrome.send('_getFaviconImage',
+                      [getFaviconUrlForCurrentDevicePixelRatio(tab.url), a.id]);
 
-          var clickHandler = this.makeClickHandler_(
-              session.tag, String(window.sessionId), String(tab.sessionId));
+          var clickHandler = this.makeClickHandler_(tab.sessionId);
           a.addEventListener('click', clickHandler);
           contents.appendChild(a);
           cr.ui.decorate(a, MenuItem);
@@ -10915,6 +10931,10 @@ cr.define('ntp', function() {
 
       // The menu button is shown iff tab sync is enabled.
       this.hidden = !isTabSyncEnabled;
+    },
+
+    reloadForeignSessions: function() {
+      this.setForeignSessions(this.sessions_, true);
     },
 
     /**
@@ -10982,9 +11002,14 @@ cr.define('ntp', function() {
     onCollapseOrExpand_: function(e) {
       this.session_.collapsed = !this.session_.collapsed;
       this.updateMenuItems_();
-      chrome.send('setForeignSessionCollapsed',
-                  [this.session_.tag, this.session_.collapsed]);
-      chrome.send('getForeignSessions');  // Refresh the list.
+      // There is no collapsed filter in chrome extension API.
+      // Mimic the behavior by setting foreign sessions again
+      // with existing data.
+      ntp.reloadForeignSessions();
+
+      //chrome.send('setForeignSessionCollapsed',
+      //            [this.session_.tag, this.session_.collapsed]);
+      //chrome.send('getForeignSessions');
 
       var eventId = this.session_.collapsed ?
           HISTOGRAM_EVENT.COLLAPSE_SESSION : HISTOGRAM_EVENT.EXPAND_SESSION;
@@ -11027,7 +11052,7 @@ cr.define('ntp', function() {
   };
 });
 
-loadTimeData.data = {"anim":true,"appDefaultPageName":"Apps","appInstallHintText":"Add more apps","appcreateshortcut":"Create shortcuts...","appdetails":"View in Web Store","applaunchtypefullscreen":"Open full screen","applaunchtypepinned":"Open as pinned tab","applaunchtyperegular":"Open as regular tab","applaunchtypewindow":"Open as window","appoptions":"Options","appsPromoTitle":"Discover the Chrome App Launcher","apps_page_id":2048,"appuninstall":"Remove from Chrome","attributionintro":"Theme created by","bookmarkbarattached":false,"closedwindowmultiple":"$1 Tabs","closedwindowsingle":"1 Tab","collapseSessionMenuItemText":"Collapse list","enableStreamlinedHostedApps":false,"expandSessionMenuItemText":"Expand list","fontfamily":"'Segoe UI', Tahoma, sans-serif","fontsize":"75%","hasattribution":false,"isDiscoveryInNTPEnabled":false,"isSwipeTrackingFromScrollEventsEnabled":false,"isUserSignedIn":false,"learnMore":"Learn\u00A0more","learn_more":"Learn\u00A0more","login_status_advanced":"","login_status_dismiss":"","login_status_message":"","login_status_url":"","most_visited_page_id":1024,"mostvisited":"Most visited","otherSessions":"Other devices","otherSessionsEmpty":"Access your open tabs on all of your devices.","otherSessionsLearnMoreUrl":"http://support.google.com/chrome/bin/answer.py?answer=185277&hl=en","page_switcher_change_title":"Go to $1","page_switcher_same_title":"More $1","recentlyclosed":"Recently closed","removethumbnailtooltip":"Don't show on this page","restoreSessionMenuItemText":"Open all","restoreThumbnailsShort":"Restore all","shouldShowSyncLogin":true,"showAppLauncherPromo":false,"showApps":true,"showMostvisited":true,"showOtherSessionsMenu":true,"showRecentlyClosed":true,"showWebStoreIcon":true,"shown_page_index":0,"shown_page_type":1024,"suggestions":"Suggested","suggestions_page_id":4096,"syncLinkText":"Advanced settings","syncpromotext":"Sign in to $1","textdirection":"ltr","themegravity":"","thumbnailremovednotification":"Thumbnail removed.","tile_grid_screenreader_accessible_description":"Use left and right arrow keys to navigate.","title":"New Tab","undothumbnailremove":"Undo","webStoreLink":"https://chrome.google.com/webstore?hl=en-US","webStoreTitle":"Chrome Web Store","webStoreTitleShort":"Web Store"};
+loadTimeData.data = {"anim":true,"appDefaultPageName":"Apps","appInstallHintText":"Add more apps","appcreateshortcut":"Create shortcuts...","appdetails":"View in Web Store","applaunchtypefullscreen":"Open full screen","applaunchtypepinned":"Open as pinned tab","applaunchtyperegular":"Open as regular tab","applaunchtypewindow":"Open as window","appoptions":"Options","appsPromoTitle":"Discover the Chrome App Launcher","apps_page_id":2048,"appuninstall":"Remove from Chrome","attributionintro":"Theme created by","bookmarkbarattached":false,"closedwindowmultiple":"$1 Tabs","closedwindowsingle":"1 Tab","collapseSessionMenuItemText":"Collapse list","enableStreamlinedHostedApps":false,"expandSessionMenuItemText":"Expand list","fontfamily":"'Segoe UI', Tahoma, sans-serif","fontsize":"75%","hasattribution":false,"isDiscoveryInNTPEnabled":false,"isSwipeTrackingFromScrollEventsEnabled":false,"isUserSignedIn":true,"learnMore":"Learn\u00A0more","learn_more":"Learn\u00A0more","login_status_advanced":"","login_status_dismiss":"","login_status_message":"","login_status_url":"","most_visited_page_id":1024,"mostvisited":"Most visited","otherSessions":"Other devices","otherSessionsEmpty":"Access your open tabs on all of your devices.","otherSessionsLearnMoreUrl":"http://support.google.com/chrome/bin/answer.py?answer=185277&hl=en","page_switcher_change_title":"Go to $1","page_switcher_same_title":"More $1","recentlyclosed":"Recently closed","removethumbnailtooltip":"Don't show on this page","restoreSessionMenuItemText":"Open all","restoreThumbnailsShort":"Restore all","shouldShowSyncLogin":true,"showAppLauncherPromo":false,"showApps":true,"showMostvisited":true,"showOtherSessionsMenu":true,"showRecentlyClosed":true,"showWebStoreIcon":true,"shown_page_index":0,"shown_page_type":1024,"suggestions":"Suggested","suggestions_page_id":4096,"syncLinkText":"Advanced settings","syncpromotext":"Sign in to $1","textdirection":"ltr","themegravity":"","thumbnailremovednotification":"Thumbnail removed.","tile_grid_screenreader_accessible_description":"Use left and right arrow keys to navigate.","title":"New Tab","undothumbnailremove":"Undo","webStoreLink":"https://chrome.google.com/webstore?hl=en-US","webStoreTitle":"Chrome Web Store","webStoreTitleShort":"Web Store"};
 // Copyright (c) 2012 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
@@ -11265,6 +11290,31 @@ window.addEventListener("message", function(event) {
   } else if (event.data.method == "_setFaviconImage") {
     document.getElementById(event.data.result.id).style.backgroundImage =
       "url('" + event.data.result.data + "')";
+  } else if (event.data.method == "foreignSessionsResult") {
+    // Process the result to fit the previous format.
+    moment.lang(event.data.result.languages);
+
+    var result = event.data.result.data;
+    for (var i = 0; i < result.length; i++) {
+      var item = result[i];
+      item.name = item.info;
+      item.collapsed = false;
+      item.modifiedTime = "";
+      item.tag = "";
+      item.windows = new Array();
+
+      var sessions = item.sessions;
+      for (var j = 0; j < sessions.length; j++) {
+        var session = sessions[j];
+        item.windows.push(session.window);
+        if (item.modifiedTime == "")
+          item.modifiedTime = moment.unix(session.lastModified).fromNow();
+        // TODO: Only the first session id is used for "open all" option.
+        if (item.tag == "")
+          item.tag = session.window.sessionId;
+      }
+    }
+    ntp.setForeignSessions(result, true);
   }
 }, false);
 
