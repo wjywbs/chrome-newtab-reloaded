@@ -48,7 +48,15 @@ if (chrome.send == undefined) {
       method += " implemented!";
       break;
     case "openForeignSession":
-      window.postMessage({ method: "openForeignSession", id: args[0] }, "*");
+      var idList = args[0];
+      if (typeof(args[0]) == "string") {
+        idList = new Array();
+        idList.push(args[0]);
+      }
+
+      for (var i = 0; i < idList.length; i++) {
+        window.postMessage({ method: "openForeignSession", id: idList[i] }, "*");
+      }
       method += " implemented!";
       break;
     }
@@ -11300,7 +11308,7 @@ window.addEventListener("message", function(event) {
       item.name = item.info;
       item.collapsed = false;
       item.modifiedTime = "";
-      item.tag = "";
+      item.tag = new Array();
       item.windows = new Array();
 
       var sessions = item.sessions;
@@ -11309,9 +11317,8 @@ window.addEventListener("message", function(event) {
         item.windows.push(session.window);
         if (item.modifiedTime == "")
           item.modifiedTime = moment.unix(session.lastModified).fromNow();
-        // TODO: Only the first session id is used for "open all" option.
-        if (item.tag == "")
-          item.tag = session.window.sessionId;
+        // Open all sessions when clicking "open all" menu.
+        item.tag.push(session.window.sessionId);
       }
     }
     ntp.setForeignSessions(result, true);
