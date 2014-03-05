@@ -233,7 +233,7 @@
     "moment-with-langs.min.js"
   ],
   
-  "permissions": ["topSites", "chrome://favicon/", "sessions", "tabs"],
+  "permissions": ["topSites", "chrome://favicon/", "sessions", "tabs", "management"],
   "incognito": "split",
   
   "minimum_chrome_version" : "33"

@@ -7,7 +7,9 @@ var loaded = false;
     case "dominantColorResult":
     case "recentlyClosedResult":
     case "_setFaviconImage":
+    case "_setAppImage":
     case "foreignSessionsResult":
+    case "appsResult":
       window.postMessage({ method: response.method, result: response.result }, "*");
       break;
     }
@@ -27,10 +29,12 @@ var loaded = false;
       case "topSites":
       case "getRecentlyClosed":
       case "getForeignSessions":
+      case "getApps":
         port.postMessage({ method: event.data.method });
         break;
       case "dominantColor":
       case "_getFaviconImage":
+      case "_getAppImage":
         port.postMessage({ method: event.data.method, url: event.data.url, id: event.data.id });
         break;
       case "reopenTab":

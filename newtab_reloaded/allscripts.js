@@ -40,7 +40,8 @@ if (chrome.send == undefined) {
       method += " implemented!";
       break;
     case "_getFaviconImage":
-      window.postMessage({ method: "_getFaviconImage", url: args[0], id: args[1] }, "*");
+    case "_getAppImage":
+      window.postMessage({ method: method, url: args[0], id: args[1] }, "*");
       method += " custom command implemented!";
       break;
     case "getForeignSessions":
@@ -57,6 +58,10 @@ if (chrome.send == undefined) {
       for (var i = 0; i < idList.length; i++) {
         window.postMessage({ method: "openForeignSession", id: idList[i] }, "*");
       }
+      method += " implemented!";
+      break;
+    case "getApps":
+      window.postMessage({ method: "getApps" }, "*");
       method += " implemented!";
       break;
     }
@@ -7374,7 +7379,9 @@ cr.define('ntp', function() {
      */
     loadIcon: function() {
       if (this.appImgSrc_) {
-        this.appImg_.src = this.appImgSrc_;
+        var imgId = "appimg-" + this.appData_.id
+        this.appImg_.id = imgId;
+        chrome.send("_getAppImage", [this.appImgSrc_, imgId]);
         this.appImg_.classList.remove('invisible');
         this.appImgSrc_ = null;
       }
@@ -9966,8 +9973,7 @@ cr.define('ntp', function() {
     if (loadTimeData.getBoolean('showMostvisited'))
       sectionsToWaitFor++;
     if (loadTimeData.getBoolean('showApps')) {
-      // Apps are not supported yet.
-      //sectionsToWaitFor++;
+      sectionsToWaitFor++;
       if (loadTimeData.getBoolean('showAppLauncherPromo')) {
         $('app-launcher-promo-close-button').addEventListener('click',
             function() { chrome.send('stopShowingAppLauncherPromo'); });
@@ -11298,6 +11304,8 @@ window.addEventListener("message", function(event) {
   } else if (event.data.method == "_setFaviconImage") {
     document.getElementById(event.data.result.id).style.backgroundImage =
       "url('" + event.data.result.data + "')";
+  } else if (event.data.method == "_setAppImage") {
+    document.getElementById(event.data.result.id).src = event.data.result.data;
   } else if (event.data.method == "foreignSessionsResult") {
     // Process the result to fit the previous format.
     moment.lang(event.data.result.languages);
@@ -11322,6 +11330,37 @@ window.addEventListener("message", function(event) {
       }
     }
     ntp.setForeignSessions(result, true);
+  } else if (event.data.method == "appsResult") {
+    // Process the result to fit the previous format.
+    var result = {
+      appPageNames: [ "Apps" ],
+      apps: []
+    };
+
+    var apps = event.data.result;
+    for (var i = 0; i < apps.length; i++) {
+      var item = apps[i];
+      if (!item.isApp)
+        continue;
+
+      // Put bookmark links at last
+      if (item.type == "hosted_app" && item.updateUrl == undefined)
+        item.app_launch_ordinal = "z" + item.name;
+      else
+        item.app_launch_ordinal = "a" + item.name;
+
+      if (item.icons && item.icons.length > 0) {
+        item.icon_big = item.icons[item.icons.length - 1].url;
+        item.icon_small = item.icons[0].url; // TODO: fix size
+      } else {
+        item.icon_big = "chrome://extension-icon/" + item.id + "/128/0";
+        item.icon_small = "chrome://extension-icon/" + item.id + "/16/0";
+      }
+      item.full_name = item.name;
+      item.title = item.name;
+      result.apps.push(item);
+    }
+    ntp.getAppsCallback(result);
   }
 }, false);
 

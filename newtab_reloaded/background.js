@@ -42,13 +42,23 @@ chrome.runtime.onConnect.addListener(function(port) {
       break;
 
     case "_getFaviconImage":
-      getFaviconImage(request.url, function(data) {
+      getImageDataFromUrl(request.url, function(data) {
         port.postMessage({
           method: "_setFaviconImage",
           result: { data: data, id: request.id }
         });
       });
       console.log("Sent _getFaviconImage response");
+      break;
+
+    case "_getAppImage":
+      getImageDataFromUrl(request.url, function(data) {
+        port.postMessage({
+          method: "_setAppImage",
+          result: { data: data, id: request.id }
+        });
+      });
+      console.log("Sent _getAppImage response");
       break;
 
     case "getForeignSessions":
@@ -59,11 +69,18 @@ chrome.runtime.onConnect.addListener(function(port) {
         });
       });
       break;
+
+    case "getApps":
+      chrome.management.getAll(function(data) {
+        port.postMessage({ method: "appsResult", result: data});
+        console.log("Sent getApps response");
+      });
+      break;
     }
   });
 });
 
-function getFaviconImage(url, callback) {
+function getImageDataFromUrl(url, callback) {
   var img = new Image();
   img.src = url;
   img.crossOrigin = "Anonymous";
