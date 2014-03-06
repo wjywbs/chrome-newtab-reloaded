@@ -76,6 +76,21 @@ chrome.runtime.onConnect.addListener(function(port) {
         console.log("Sent getApps response");
       });
       break;
+
+    case "launchApp":
+      chrome.management.setEnabled(request.id, true, function() {
+        chrome.management.launchApp(request.id);
+        port.postMessage({ method: "appLaunched" });
+        console.log("Sent launchApp response");
+      });
+      break;
+
+    case "uninstallApp":
+      chrome.management.uninstall(request.id, {showConfirmDialog: true}, function() {
+        port.postMessage({ method: "appUninstallCallback" });
+        console.log("Sent uninstallApp response");
+      });
+      break;
     }
   });
 });

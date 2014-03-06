@@ -64,6 +64,11 @@ if (chrome.send == undefined) {
       window.postMessage({ method: "getApps" }, "*");
       method += " implemented!";
       break;
+    case "launchApp":
+    case "uninstallApp":
+      window.postMessage({ method: method, id: args[0] }, "*");
+      method += " implemented!";
+      break;
     }
     console.log("chrome.send stub: " + method);
   }
@@ -11361,6 +11366,11 @@ window.addEventListener("message", function(event) {
       result.apps.push(item);
     }
     ntp.getAppsCallback(result);
+  } else if (event.data.method == "appLaunched" ||
+             event.data.method == "appUninstallCallback") {
+    // Check whether an app is enabled before launch and
+    // check whether an app is uninstalled.
+    chrome.send("getApps");
   }
 }, false);
 

@@ -10,6 +10,8 @@ var loaded = false;
     case "_setAppImage":
     case "foreignSessionsResult":
     case "appsResult":
+    case "appLaunched":
+    case "appUninstallCallback":
       window.postMessage({ method: response.method, result: response.result }, "*");
       break;
     }
@@ -39,6 +41,8 @@ var loaded = false;
         break;
       case "reopenTab":
       case "openForeignSession":
+      case "launchApp":
+      case "uninstallApp":
         port.postMessage({ method: event.data.method, id: event.data.id });
         break;
       }
