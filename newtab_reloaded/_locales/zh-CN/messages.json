@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "重新载入的新标签",
+    "description": "扩展程序名称"
+  },
+  "extDesc": {
+    "message": "退回到以前的新标签页，移除Chrome 33版本之后（恶心）的即时扩展搜索条！",
+    "description": "扩展程序描述"
+  },
+  "extShortName": {
+    "message": "让Chrome 33之后版本使用以前的新标签页",
+    "description": "扩展程序简短描述"
+  }
+}
