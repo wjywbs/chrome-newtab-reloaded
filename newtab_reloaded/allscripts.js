@@ -69,6 +69,11 @@ if (chrome.send == undefined) {
       window.postMessage({ method: method, id: args[0] }, "*");
       method += " implemented!";
       break;
+    case "pageSelected":
+      localStorage.setItem("ntp_shown_page_type", args[0]);
+      localStorage.setItem("ntp_shown_page_index", args[1]);
+      method += " implemented!";
+      break;
     }
     console.log("chrome.send stub: " + method);
   }
@@ -11294,25 +11299,25 @@ window.addEventListener("message", function(event) {
     if (!item.isApp)
         return null;
 
-      // Put bookmark links at last
-      if (item.type == "hosted_app" && item.updateUrl == undefined)
-        item.app_launch_ordinal = "z" + item.name;
-      else
-        item.app_launch_ordinal = "t" + item.name;
+    // Put bookmark links at last
+    if (item.type == "hosted_app" && item.updateUrl == undefined)
+      item.app_launch_ordinal = "z" + item.name;
+    else
+      item.app_launch_ordinal = "t" + item.name;
 
-      if (item.icons && item.icons.length > 0) {
-        item.icon_big = item.icons[item.icons.length - 1].url;
-        item.icon_small = item.icons[0].url; // TODO: fix size
-      } else {
-        item.icon_big = "chrome://extension-icon/" + item.id + "/128/0";
-        item.icon_small = "chrome://extension-icon/" + item.id + "/16/0";
-      }
+    if (item.icons && item.icons.length > 0) {
+      item.icon_big = item.icons[item.icons.length - 1].url;
+      item.icon_small = item.icons[0].url; // TODO: fix size
+    } else {
+      item.icon_big = "chrome://extension-icon/" + item.id + "/128/0";
+      item.icon_small = "chrome://extension-icon/" + item.id + "/16/0";
+    }
 
-      if (item.type == "packaged_app")
-        item.packagedApp = true;
+    if (item.type == "packaged_app")
+      item.packagedApp = true;
 
-      item.full_name = item.name;
-      item.title = item.name;
+    item.full_name = item.name;
+    item.title = item.name;
     return item;
   };
 
@@ -11389,6 +11394,17 @@ window.addEventListener("message", function(event) {
       ntp.appRemoved(item, false, true);
   }
 }, false);
+
+// Restore last page.
+(function() {
+  var shownPage = localStorage.getItem("ntp_shown_page_type");
+  if (shownPage != null)
+    loadTimeData.data_.shown_page_type = shownPage;
+
+  var shownPageIndex = localStorage.getItem("ntp_shown_page_index");
+  if (shownPageIndex != null)
+    loadTimeData.data_.shown_page_index = shownPageIndex;
+})();
 
 // Manually call onLoad
 ntp.onLoad();
