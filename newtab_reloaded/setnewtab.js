@@ -10,8 +10,10 @@ var loaded = false;
     case "_setAppImage":
     case "foreignSessionsResult":
     case "appsResult":
-    case "appLaunched":
-    case "appUninstallCallback":
+    case "appInstalled":
+    case "appUninstalled":
+    case "appEnabled":
+    case "appDisabled":
       window.postMessage({ method: response.method, result: response.result }, "*");
       break;
     }

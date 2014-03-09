@@ -11290,6 +11290,32 @@ var setTopSite = function() {
 // Duplicate with loadTimeData.js
 window.addEventListener("message", function(event) {
   console.log(event.data);
+  var processAppInfo = function(item) {
+    if (!item.isApp)
+        return null;
+
+      // Put bookmark links at last
+      if (item.type == "hosted_app" && item.updateUrl == undefined)
+        item.app_launch_ordinal = "z" + item.name;
+      else
+        item.app_launch_ordinal = "t" + item.name;
+
+      if (item.icons && item.icons.length > 0) {
+        item.icon_big = item.icons[item.icons.length - 1].url;
+        item.icon_small = item.icons[0].url; // TODO: fix size
+      } else {
+        item.icon_big = "chrome://extension-icon/" + item.id + "/128/0";
+        item.icon_small = "chrome://extension-icon/" + item.id + "/16/0";
+      }
+
+      if (item.type == "packaged_app")
+        item.packagedApp = true;
+
+      item.full_name = item.name;
+      item.title = item.name;
+    return item;
+  };
+
   if (event.data.method == "topSitesResult") {
     topsite = event.data.result;
     setTopSite();
@@ -11344,33 +11370,23 @@ window.addEventListener("message", function(event) {
 
     var apps = event.data.result;
     for (var i = 0; i < apps.length; i++) {
-      var item = apps[i];
-      if (!item.isApp)
-        continue;
-
-      // Put bookmark links at last
-      if (item.type == "hosted_app" && item.updateUrl == undefined)
-        item.app_launch_ordinal = "z" + item.name;
-      else
-        item.app_launch_ordinal = "a" + item.name;
-
-      if (item.icons && item.icons.length > 0) {
-        item.icon_big = item.icons[item.icons.length - 1].url;
-        item.icon_small = item.icons[0].url; // TODO: fix size
-      } else {
-        item.icon_big = "chrome://extension-icon/" + item.id + "/128/0";
-        item.icon_small = "chrome://extension-icon/" + item.id + "/16/0";
-      }
-      item.full_name = item.name;
-      item.title = item.name;
-      result.apps.push(item);
+      var item = processAppInfo(apps[i]);
+      if (item != null)
+        result.apps.push(item);
     }
     ntp.getAppsCallback(result);
-  } else if (event.data.method == "appLaunched" ||
-             event.data.method == "appUninstallCallback") {
-    // Check whether an app is enabled before launch and
-    // check whether an app is uninstalled.
-    chrome.send("getApps");
+  } else if (event.data.method == "appInstalled") {
+    var item = processAppInfo(event.data.result);
+    if (item != null)
+      ntp.appAdded(item, false);
+  } else if (event.data.method == "appUninstalled") {
+    var item = { id: event.data.result };
+    ntp.appRemoved(item, true, true);
+  } else if (event.data.method == "appEnabled" ||
+             event.data.method == "appDisabled") {
+    var item = processAppInfo(event.data.result);
+    if (item != null)
+      ntp.appRemoved(item, false, true);
   }
 }, false);
 
