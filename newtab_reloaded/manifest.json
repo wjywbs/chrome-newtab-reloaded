@@ -3,8 +3,7 @@
   "name": "__MSG_extName__",
   "description": "__MSG_extDesc__",
   "short_name": "__MSG_extShortName__",
-  "version": "0.0.5.4",
-  
+  "version": "0.0.5.5",  
   "default_locale": "en",
   "icons": {
     "200": "icon200.png",
@@ -230,7 +229,8 @@
     "allscripts.js",
     "trash.png",
     "suggestions_page.css",
-    "moment-with-langs.min.js"
+    "moment-with-langs.min.js",
+    "_locales/*"
   ],
   
   "permissions": ["topSites", "chrome://favicon/", "sessions", "tabs", "management"],

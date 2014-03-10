@@ -4,7 +4,7 @@
     "description": "Extension Name"
   },
   "extDesc": {
-    "message": "Revert to the previous new tab page. Remove the instant extended search bars for chrome 33+!",
+    "message": "恢复旧版的新标签页，去掉Chrome 33版本之后新标签页上的谷歌图标和搜索条！",
     "description": "Extension Description"
   },
   "extShortName": {
@@ -12,7 +12,7 @@
     "description": "Extension Short Description"
   },
   "folderName": {
-    "message": "en",
+    "message": "zh_CN",
     "description": "Name of this folder"
   }
 }
