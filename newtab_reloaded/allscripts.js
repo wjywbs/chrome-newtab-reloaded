@@ -11398,12 +11398,12 @@ window.addEventListener("message", function(event) {
 // Restore last page.
 (function() {
   var shownPage = localStorage.getItem("ntp_shown_page_type");
-  if (shownPage != null)
-    loadTimeData.data_.shown_page_type = shownPage;
+  if (shownPage != null && Number(shownPage) != NaN)
+    loadTimeData.data_.shown_page_type = Number(shownPage);
 
   var shownPageIndex = localStorage.getItem("ntp_shown_page_index");
-  if (shownPageIndex != null)
-    loadTimeData.data_.shown_page_index = shownPageIndex;
+  if (shownPageIndex != null && Number(shownPageIndex) != NaN)
+    loadTimeData.data_.shown_page_index = Number(shownPageIndex);
 })();
 
 // Manually call onLoad
