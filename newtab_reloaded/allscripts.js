@@ -11093,6 +11093,7 @@ var loadLocalizedData = function() {
     loadTimeData.data_.showRecentlyClosed = true;
     // Let the most visited page be the default.
     loadTimeData.data_.shown_page_type = 1024;
+    loadTimeData.data_.isUserSignedIn = true;
   }
 };
 loadLocalizedData();
