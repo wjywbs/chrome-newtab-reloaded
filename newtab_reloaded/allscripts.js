@@ -11388,7 +11388,7 @@ window.addEventListener("message", function(event) {
   } else if (event.data.method == "appsResult") {
     // Process the result to fit the previous format.
     var result = {
-      appPageNames: [ "Apps" ],
+      appPageNames: [ loadTimeData.data_.appDefaultPageName ],
       apps: []
     };
 
