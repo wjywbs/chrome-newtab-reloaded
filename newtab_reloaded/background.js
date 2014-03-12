@@ -84,7 +84,17 @@ chrome.runtime.onConnect.addListener(function(port) {
       break;
 
     case "uninstallApp":
-      chrome.management.uninstall(request.id, {showConfirmDialog: true});
+      // There's a change in chrome rev 245457 that needs a user gesture to
+      // uninstall apps. It's included after 34.0.1790.0
+      // Get chrome version, e.g. 35.0.1885.0
+      var version = window.navigator.appVersion.match(/\d+\.\d+\.\d+\.\d+/);
+      if (version && Number(version[0].split(".")[2]) >= 1790) {
+        chrome.test.runWithUserGesture(function() {
+          chrome.management.uninstall(request.id, {showConfirmDialog: true});
+        });
+      } else {
+        chrome.management.uninstall(request.id, {showConfirmDialog: true});
+      }
       break;
     }
   });
