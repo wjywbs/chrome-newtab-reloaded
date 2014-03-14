@@ -11030,6 +11030,8 @@ var loadLocalizedData = function() {
     loadTimeData.data_.showRecentlyClosed = true;
     // Let the most visited page be the default.
     loadTimeData.data_.shown_page_type = 1024;
+    loadTimeData.data_.hasattribution = 
+      (chrome.embeddedSearch.newTabPage.themeBackgroundInfo.attributionUrl != undefined);
   }
 };
 loadLocalizedData();
@@ -11212,23 +11214,29 @@ function convertArrayToRGBAColor(rgbaColor) {
 // End Copied from chrome-search://most-visited/util.js
 
 var updateTheme = function() {
-  var color = 'rgba(24,74,183,1)';
   var themeInfo = chrome.embeddedSearch.newTabPage.themeBackgroundInfo;
+  ntp.themeChanged(themeInfo.attributionUrl != undefined);
 
-  if (themeInfo.usingDefaultTheme)
-    document.body.style.backgroundImage = '';
-  else {
+  var loadCustomTheme = function() {
     document.body.style.backgroundImage = themeInfo.imageUrl;
-    document.body.style.backgroundRepeat = themeInfo.imageTiling + " " + themeInfo.imageTiling;
-    if (themeInfo.imageTiling == "repeat")
-      document.body.style.backgroundPosition = "50% 50%";
-    else
-      document.body.style.backgroundPosition = "50% 0%";
-    color = convertArrayToRGBAColor(themeInfo.textColorRgba) || color;
-    document.body.style.backgroundSize = "initial";
-  }
+    document.body.style.backgroundRepeat = themeInfo.imageTiling;
+    document.body.style.backgroundPosition = themeInfo.imageHorizontalAlignment +
+      " " + themeInfo.imageVerticalAlignment;
 
-  var pageTitles = document.getElementsByClassName('title');
+    document.body.style.backgroundSize = "initial";
+    if (themeInfo.attributionUrl)
+      $("attribution-img").style.content = themeInfo.attributionUrl;
+  };
+
+  if (themeInfo.usingDefaultTheme) {
+    document.body.style.backgroundImage = "";
+    document.body.style.backgroundColor = 
+      convertArrayToRGBAColor(themeInfo.backgroundColorRgba);
+  } else
+    setTimeout(loadCustomTheme, 40);
+
+  var color = convertArrayToRGBAColor(themeInfo.textColorRgba);
+  var pageTitles = document.getElementsByClassName("title");
   for (var i = 0; i < pageTitles.length; i++)
     pageTitles[i].style.color = color;
 };
