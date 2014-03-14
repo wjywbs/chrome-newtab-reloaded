@@ -11225,6 +11225,7 @@ var updateTheme = function() {
     else
       document.body.style.backgroundPosition = "50% 0%";
     color = convertArrayToRGBAColor(themeInfo.textColorRgba) || color;
+    document.body.style.backgroundSize = "initial";
   }
 
   var pageTitles = document.getElementsByClassName('title');
