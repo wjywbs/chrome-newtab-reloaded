@@ -11416,7 +11416,9 @@ window.addEventListener("message", function(event) {
       ntp.appAdded(item, false);
   } else if (event.data.method == "appUninstalled") {
     var item = { id: event.data.result };
-    ntp.appRemoved(item, true, true);
+    // The app can be an extension or theme that is not shown.
+    if ($(event.data.result))
+      ntp.appRemoved(item, true, true);
   } else if (event.data.method == "appEnabled" ||
              event.data.method == "appDisabled") {
     var item = processAppInfo(event.data.result);
