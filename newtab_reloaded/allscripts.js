@@ -11424,6 +11424,8 @@ window.addEventListener("message", function(event) {
     var item = processAppInfo(event.data.result);
     if (item != null)
       ntp.appRemoved(item, false, true);
+  } else if (event.data.method == "onRecentlyClosed") {
+    chrome.send("getRecentlyClosedTabs");
   }
 }, false);
 

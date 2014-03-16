@@ -99,28 +99,35 @@ chrome.runtime.onConnect.addListener(function(port) {
     }
   });
 
-  var makeAppHandler = function(method) {
+  var makeHandler = function(method) {
     return function(data) {
       port.postMessage({ method: method, result: data});
       console.log("Sent " + method + " response");
     };
   };
 
-  var appInstalledHandler = makeAppHandler("appInstalled"),
-      appUninstalledHandler = makeAppHandler("appUninstalled"),
-      appEnabledHandler = makeAppHandler("appEnabled"),
-      appDisabledHandler = makeAppHandler("appDisabled");
+  var appInstalledHandler = makeHandler("appInstalled"),
+      appUninstalledHandler = makeHandler("appUninstalled"),
+      appEnabledHandler = makeHandler("appEnabled"),
+      appDisabledHandler = makeHandler("appDisabled");
 
   chrome.management.onInstalled.addListener(appInstalledHandler);
   chrome.management.onUninstalled.addListener(appUninstalledHandler);
   chrome.management.onEnabled.addListener(appEnabledHandler);
   chrome.management.onDisabled.addListener(appDisabledHandler);
 
+  var recentlyClosedHandler = makeHandler("onRecentlyClosed");
+  if (chrome.sessions.onRecentlyClosed)
+    chrome.sessions.onRecentlyClosed.addListener(recentlyClosedHandler);
+
   port.onDisconnect.addListener(function() {
     chrome.management.onInstalled.removeListener(appInstalledHandler);
     chrome.management.onUninstalled.removeListener(appUninstalledHandler);
     chrome.management.onEnabled.removeListener(appEnabledHandler);
     chrome.management.onDisabled.removeListener(appDisabledHandler);
+
+    if (chrome.sessions.onRecentlyClosed)
+      chrome.sessions.onRecentlyClosed.removeListener(recentlyClosedHandler);
   });
 });
 

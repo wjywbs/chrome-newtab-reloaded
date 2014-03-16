@@ -14,6 +14,7 @@ var loaded = false;
     case "appUninstalled":
     case "appEnabled":
     case "appDisabled":
+    case "onRecentlyClosed":
       window.postMessage({ method: response.method, result: response.result }, "*");
       break;
     }
