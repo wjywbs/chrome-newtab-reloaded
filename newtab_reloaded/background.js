@@ -85,16 +85,12 @@ chrome.runtime.onConnect.addListener(function(port) {
 
     case "uninstallApp":
       // There's a change in chrome rev 245457 that needs a user gesture to
-      // uninstall apps. It's included after 34.0.1790.0
-      // Get chrome version, e.g. 35.0.1885.0
-      var version = window.navigator.appVersion.match(/\d+\.\d+\.\d+\.\d+/);
-      if (version && Number(version[0].split(".")[2]) >= 1790) {
-        chrome.test.runWithUserGesture(function() {
-          chrome.management.uninstall(request.id, {showConfirmDialog: true});
-        });
-      } else {
-        chrome.management.uninstall(request.id, {showConfirmDialog: true});
-      }
+      // uninstall apps after 34.0.1790.0. The bug is that user gesture can
+      // not be passed with onMessage, so the confirmation dialog will not
+      // appear, and the app will not be removed.
+      // chrome.test is removed since rev 257262.
+      // Wait for bug fix at http://crbug.com/178319
+      chrome.management.uninstall(request.id, {showConfirmDialog: true});
       break;
     }
   });
