@@ -7579,7 +7579,6 @@ cr.define('ntp', function() {
      */
     removeFromChrome: function() {
       chrome.send('uninstallApp', [this.appData_.id, true]);
-      this.tile.tilePage.removeTile(this.tile, true);
     },
 
     /**
