@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+  <title>New Tab Reloaded Settings</title>
+  <link rel="stylesheet" type="text/css" href="bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="options.css">
+  <script src="options.js"></script>
+</head>
+<body>
+  <div class="options_page">
+    <div class="title">New Tab Reloaded Settings</div>
+
+    <div class="bs-example">
+      <div class="group-info">Most Visited</div>
+      <form class="form-horizontal" role="form">
+        <div class="form-group">
+          <label for="tilesPerRow" class="col-sm-3 control-label">Tiles per Row</label>
+          <div class="col-xs-2">
+            <input type="text" class="form-control" id="tilesPerRow">
+          </div>
+          <div class="col-sm-2 help-inline">( default: 4 )</div>
+        </div>
+
+        <div class="form-group">
+          <label for="numberOfTiles" class="col-sm-3 control-label">Number of Tiles</label>
+          <div class="col-xs-2">
+            <input type="text" class="form-control" id="numberOfTiles" placeholder="">
+          </div>
+          <div class="col-sm-2 help-inline">( default: 8 )</div>
+        </div>
+      </form>
+    </div>
+
+    <div class="form-group">
+      <div class="text-center">
+        <button id="apply" type="submit" class="btn btn-default">Apply</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
