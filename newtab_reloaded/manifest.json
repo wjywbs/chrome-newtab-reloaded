@@ -221,7 +221,7 @@
         "https://www.google.co.zw/_/chrome/*"
       ],
       "js": [ "setnewtab.js" ],
-      "run_at": "document_idle"
+      "run_at": "document_end"
     }
   ],
   
