@@ -45,7 +45,9 @@ if (chrome.send == undefined) {
       method += " custom command implemented!";
       break;
     case "getForeignSessions":
-      window.postMessage({ method: "getForeignSessions" }, "*");
+    case "getApps":
+    case "_getSettings":
+      window.postMessage({ method: method }, "*");
       method += " implemented!";
       break;
     case "openForeignSession":
@@ -58,10 +60,6 @@ if (chrome.send == undefined) {
       for (var i = 0; i < idList.length; i++) {
         window.postMessage({ method: "openForeignSession", id: idList[i] }, "*");
       }
-      method += " implemented!";
-      break;
-    case "getApps":
-      window.postMessage({ method: "getApps" }, "*");
       method += " implemented!";
       break;
     case "launchApp":
@@ -8334,6 +8332,18 @@ cr.define('ntp', function() {
   var THUMBNAIL_COUNT = 8;
 
   /**
+   * Changing the returned object will change the internal object as well.
+   */
+  function getMostVisitedPageGridValues() {
+    return mostVisitedPageGridValues;
+  }
+
+  function loadMostVisitedPageSettings(thumbnailCount) {
+    TilePage.initGridValues(mostVisitedPageGridValues);
+    THUMBNAIL_COUNT = thumbnailCount;
+  }
+
+  /**
    * Creates a new MostVisitedPage object.
    * @constructor
    * @extends {TilePage}
@@ -8531,6 +8541,8 @@ cr.define('ntp', function() {
   return {
     MostVisitedPage: MostVisitedPage,
     refreshData: refreshData,
+    getMostVisitedPageGridValues: getMostVisitedPageGridValues,
+    loadMostVisitedPageSettings: loadMostVisitedPageSettings
   };
 });
 
@@ -11427,6 +11439,15 @@ window.addEventListener("message", function(event) {
       ntp.appRemoved(item, false, true);
   } else if (event.data.method == "onRecentlyClosed") {
     chrome.send("getRecentlyClosedTabs");
+  } else if (event.data.method == "_setSettings") {
+    var options = event.data.result;
+
+    var mostVisitedPageGridValues = ntp.getMostVisitedPageGridValues();
+    mostVisitedPageGridValues.maxColCount = options.mTilesPerRow.value;
+    ntp.loadMostVisitedPageSettings(options.mNumberOfTiles.value);
+
+    // Manually call onLoad
+    ntp.onLoad();
   }
 }, false);
 
@@ -11441,5 +11462,4 @@ window.addEventListener("message", function(event) {
     loadTimeData.data_.shown_page_index = Number(shownPageIndex);
 })();
 
-// Manually call onLoad
-ntp.onLoad();
+chrome.send("_getSettings");

@@ -1,8 +1,3 @@
-var options = {
-  mTilesPerRow:   "mostVisited.tilesPerRow",
-  mNumberOfTiles: "mostVisited.numberOfTiles"
-};
-
 /**
  * Alias for document.getElementById.
  * @param {string} id The ID of the element to find.
@@ -12,30 +7,30 @@ function $(id) {
   return document.getElementById(id);
 }
 
-function setValueFromLocalStorage(elementId, key, defaultValue) {
-  var value = localStorage.getItem(key);
+function setValueFromLocalStorage(option) {
+  var value = localStorage.getItem(option.key);
   if (value == null)
-    $(elementId).value = defaultValue;
+    $(option.element).value = option.defaultValue;
   else
-    $(elementId).value = value;
+    $(option.element).value = value;
 }
 
-function setLocalStorageFromValue(elementId, key, defaultValue) {
-  var value = $(elementId).value;
-  if (typeof(defaultValue) == "number" && isNaN(value))
-    localStorage.setItem(key, defaultValue);
+function setLocalStorageFromValue(option) {
+  var value = $(option.element).value;
+  if (typeof(option.defaultValue) == "number" && isNaN(value))
+    localStorage.setItem(option.key, option.defaultValue);
   else
-    localStorage.setItem(key, value);
+    localStorage.setItem(option.key, value);
 }
 
 function loadSettings() {
-  setValueFromLocalStorage("tilesPerRow", options.mTilesPerRow, 4);
-  setValueFromLocalStorage("numberOfTiles", options.mNumberOfTiles, 8);
+  setValueFromLocalStorage(options.mTilesPerRow);
+  setValueFromLocalStorage(options.mNumberOfTiles);
 }
 
 function applySettings() {
-  setLocalStorageFromValue("tilesPerRow", options.mTilesPerRow, 4);
-  setLocalStorageFromValue("numberOfTiles", options.mNumberOfTiles, 8);
+  setLocalStorageFromValue(options.mTilesPerRow);
+  setLocalStorageFromValue(options.mNumberOfTiles);
 
   loadSettings();
 }

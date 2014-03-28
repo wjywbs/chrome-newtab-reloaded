@@ -92,6 +92,11 @@ chrome.runtime.onConnect.addListener(function(port) {
       // This bug was fixed in blink rev 170079 and 170243 after 35.0.1915.0.
       chrome.management.uninstall(request.id, {showConfirmDialog: true});
       break;
+
+    case "_getSettings":
+      port.postMessage({ method: "_setSettings", result: getSettings()});
+      console.log("Sent _getSettings response");
+      break;
     }
   });
 
@@ -140,6 +145,33 @@ function getImageDataFromUrl(url, callback) {
     context.drawImage(img, 0, 0);
     callback(canvas.toDataURL("image/png"));
   };
+}
+
+function getSettings() {
+  var loadOption = function(option) {
+    var value = localStorage.getItem(option.key);
+
+    if (value == null) {
+      option.value = option.defaultValue;
+      return;
+    }
+
+    switch (typeof(option.defaultValue)) {
+    case "number":
+      if (isNaN(value))
+        option.value = option.defaultValue;
+      else
+        option.value = Number(value);
+      break;
+
+    default:
+      option.value = value;
+    }
+  };
+
+  loadOption(options.mTilesPerRow);
+  loadOption(options.mNumberOfTiles);
+  return options;
 }
 
 // Merged RGBaster from: https://github.com/briangonzalez/rgbaster.js

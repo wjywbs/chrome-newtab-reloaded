@@ -15,6 +15,7 @@ var loaded = false;
     case "appEnabled":
     case "appDisabled":
     case "onRecentlyClosed":
+    case "_setSettings":
       window.postMessage({ method: response.method, result: response.result }, "*");
       break;
     }
@@ -38,6 +39,7 @@ var loaded = false;
       case "getRecentlyClosed":
       case "getForeignSessions":
       case "getApps":
+      case "_getSettings":
         port.postMessage({ method: event.data.method });
         break;
       case "dominantColor":

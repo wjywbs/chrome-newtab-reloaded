@@ -16,7 +16,7 @@
   
   "background": {
     "persistent": false,
-    "scripts": [ "background.js" ]
+    "scripts": [ "config.js", "background.js" ]
   },
   
   "content_scripts": [
