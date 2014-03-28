@@ -86,10 +86,10 @@ chrome.runtime.onConnect.addListener(function(port) {
     case "uninstallApp":
       // There's a change in chrome rev 245457 that needs a user gesture to
       // uninstall apps after 34.0.1790.0. The bug is that user gesture can
-      // not be passed with onMessage, so the confirmation dialog will not
+      // not be passed with postMessage, so the confirmation dialog will not
       // appear, and the app will not be removed.
       // chrome.test is removed since rev 257262.
-      // Wait for bug fix at http://crbug.com/178319
+      // This bug was fixed in blink rev 170079 and 170243 after 35.0.1915.0.
       chrome.management.uninstall(request.id, {showConfirmDialog: true});
       break;
     }
