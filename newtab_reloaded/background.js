@@ -118,8 +118,8 @@ chrome.runtime.onConnect.addListener(function(port) {
   chrome.management.onDisabled.addListener(appDisabledHandler);
 
   var recentlyClosedHandler = makeHandler("onRecentlyClosed");
-  if (chrome.sessions.onRecentlyClosed)
-    chrome.sessions.onRecentlyClosed.addListener(recentlyClosedHandler);
+  if (chrome.sessions.onChanged)
+    chrome.sessions.onChanged.addListener(recentlyClosedHandler);
 
   port.onDisconnect.addListener(function() {
     chrome.management.onInstalled.removeListener(appInstalledHandler);
@@ -127,8 +127,8 @@ chrome.runtime.onConnect.addListener(function(port) {
     chrome.management.onEnabled.removeListener(appEnabledHandler);
     chrome.management.onDisabled.removeListener(appDisabledHandler);
 
-    if (chrome.sessions.onRecentlyClosed)
-      chrome.sessions.onRecentlyClosed.removeListener(recentlyClosedHandler);
+    if (chrome.sessions.onChanged)
+      chrome.sessions.onChanged.removeListener(recentlyClosedHandler);
   });
 });
 
