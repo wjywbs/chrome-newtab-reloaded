@@ -10681,6 +10681,9 @@ cr.define('ntp', function() {
         a.textContent = data.title;
       }
 
+      var menuButton = MenuButton;
+      var currentInstance = this;
+
       function onActivated(e) {
         ntp.logTimeToClick('RecentlyClosed');
         chrome.send('recordAppLaunchByURL',
@@ -10702,6 +10705,7 @@ cr.define('ntp', function() {
 
         e.preventDefault();
         e.stopPropagation();
+        menuButton.prototype.hideMenu.apply(currentInstance, null);
       }
       a.addEventListener('activate', onActivated);
       a.addEventListener('click', function(e) { e.preventDefault(); });
