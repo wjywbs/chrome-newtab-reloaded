@@ -3,7 +3,7 @@
   "name": "__MSG_extName__",
   "description": "__MSG_extDesc__",
   "short_name": "__MSG_extShortName__",
-  "version": "0.0.7",
+  "version": "0.0.8",
   
   "default_locale": "en",
   "icons": {
@@ -221,7 +221,7 @@
         "https://www.google.co.zw/_/chrome/*"
       ],
       "js": [ "setnewtab.js" ],
-      "run_at": "document_idle"
+      "run_at": "document_end"
     }
   ],
   

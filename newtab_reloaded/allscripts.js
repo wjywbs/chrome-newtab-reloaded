@@ -36,6 +36,15 @@ if (chrome.send == undefined) {
   }
 }
 
+// Since the extension now loads earlier to avoid showing the search bar,
+// navigating to most visited sites will reload this web page and rerun this
+// script (don't know why). Running this script again will emit errors and
+// produce noticeable differences (the spinning loading indicator, contents
+// disappearing, etc). Preventing from reloading is a solution.
+// window.loaded is set at the end of this script. The canary
+// version doesn't have this bug.
+if (window.loaded)
+  throw new Error("Prevent from reloading this page.");
 
 //<!-- It's important that this be the first script loaded. -->
 // Copyright (c) 2012 The Chromium Authors. All rights reserved.
@@ -11267,6 +11276,8 @@ window.addEventListener("message", function(event) {
   } else if (event.data.method == "dominantColorResult")
     ntp.setFaviconDominantColor(event.data.result.id, event.data.result.dominantColor);
 }, false);
+
+window.loaded = true;
 
 // Manually call onLoad
 ntp.onLoad();
