@@ -81,10 +81,11 @@ if (chrome.send == undefined) {
 // navigating to most visited sites will reload this web page and rerun this
 // script (don't know why). Running this script again will emit errors and
 // produce noticeable differences (the spinning loading indicator, contents
-// disappearing, etc). Preventing from reloading is a solution.
+// disappearing, etc). Preventing from reloading is a solution. The canary
+// version doesn't have this bug.
 // window.loaded is set at the end of this script.
 if (window.loaded)
-  return;
+  throw new Error("Prevent from reloading this page.");
 
 //<!-- It's important that this be the first script loaded. -->
 // Copyright (c) 2012 The Chromium Authors. All rights reserved.
