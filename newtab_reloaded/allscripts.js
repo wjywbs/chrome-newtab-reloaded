@@ -11308,10 +11308,16 @@ var updateTheme = function() {
   ntp.themeChanged(themeInfo.attributionUrl != undefined);
 
   var loadCustomTheme = function() {
-    document.body.style.backgroundImage = themeInfo.imageUrl;
-    document.body.style.backgroundRepeat = themeInfo.imageTiling;
-    document.body.style.backgroundPosition = themeInfo.imageHorizontalAlignment +
-      " " + themeInfo.imageVerticalAlignment;
+    document.body.style.backgroundColor = 
+      convertArrayToRGBAColor(themeInfo.backgroundColorRgba);
+
+    if (themeInfo.imageUrl) {
+      document.body.style.backgroundImage = themeInfo.imageUrl;
+      document.body.style.backgroundRepeat = themeInfo.imageTiling;
+      document.body.style.backgroundPosition = themeInfo.imageHorizontalAlignment +
+        " " + themeInfo.imageVerticalAlignment;
+    } else
+      document.body.style.backgroundImage = "";
 
     document.body.style.backgroundSize = "initial";
     if (themeInfo.attributionUrl)
