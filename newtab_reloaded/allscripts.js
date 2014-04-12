@@ -77,6 +77,14 @@ if (chrome.send == undefined) {
   }
 }
 
+// Since the extension now loads earlier to avoid showing the search bar,
+// navigating to most visited sites will reload this web page and rerun this
+// script (don't know why). Running this script again will emit errors and
+// produce noticeable differences (the spinning loading indicator, contents
+// disappearing, etc). Preventing from reloading is a solution.
+// window.loaded is set at the end of this script.
+if (window.loaded)
+  return;
 
 //<!-- It's important that this be the first script loaded. -->
 // Copyright (c) 2012 The Chromium Authors. All rights reserved.
@@ -11466,4 +11474,5 @@ window.addEventListener("message", function(event) {
     loadTimeData.data_.shown_page_index = Number(shownPageIndex);
 })();
 
+window.loaded = true;
 chrome.send("_getSettings");
