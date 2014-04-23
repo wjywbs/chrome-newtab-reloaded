@@ -51,6 +51,7 @@ var loaded = false;
       case "openForeignSession":
       case "launchApp":
       case "uninstallApp":
+      case "createAppShortcut":
         port.postMessage({ method: event.data.method, id: event.data.id });
         break;
       }

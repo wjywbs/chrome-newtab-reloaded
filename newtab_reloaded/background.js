@@ -97,6 +97,10 @@ chrome.runtime.onConnect.addListener(function(port) {
       port.postMessage({ method: "_setSettings", result: getSettings()});
       console.log("Sent _getSettings response");
       break;
+
+    case "createAppShortcut":
+      chrome.management.createAppShortcut(request.id);
+      break;
     }
   });
 

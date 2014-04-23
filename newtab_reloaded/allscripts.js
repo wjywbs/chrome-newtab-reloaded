@@ -64,6 +64,7 @@ if (chrome.send == undefined) {
       break;
     case "launchApp":
     case "uninstallApp":
+    case "createAppShortcut":
       window.postMessage({ method: method, id: args[0] }, "*");
       method += " implemented!";
       break;
@@ -11118,8 +11119,6 @@ var loadLocalizedData = function() {
     // Let the most visited page be the default.
     loadTimeData.data_.shown_page_type = 1024;
     loadTimeData.data_.isUserSignedIn = true;
-    // CreateAppShortcut is not supported.
-    loadTimeData.data_.disableCreateAppShortcut = true;
     loadTimeData.data_.hasattribution = 
       (chrome.embeddedSearch.newTabPage.themeBackgroundInfo.attributionUrl != undefined);
   }
