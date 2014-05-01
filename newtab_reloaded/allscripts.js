@@ -11027,6 +11027,7 @@ var loadLocalizedData = function() {
     // Let the most visited page be the default.
     loadTimeData.data_.shown_page_type = 1024;
     loadTimeData.data_.isUserSignedIn = true;
+    loadTimeData.data_.disableCreateAppShortcut = false;
     loadTimeData.data_.hasattribution = 
       (chrome.embeddedSearch.newTabPage.themeBackgroundInfo.attributionUrl != undefined);
   }
