@@ -1,16 +1,21 @@
 
 if (chrome.send == undefined) {
+  var sendExtensionEvent = function(data) {
+    var event = new CustomEvent("extensionEvent", { detail: data });
+    window.dispatchEvent(event);
+  };
+
   chrome.send = function(method, args) {
     switch (method) {
     case "getMostVisited":
-      window.postMessage({ method: "topSites" }, "*");
+      sendExtensionEvent({ method: "topSites" });
       method += " implemented!";
       break;
     case "getFaviconDominantColor":
       // This page can't access chrome://favicon and can not load images from
       // "chrome-search://favicon/size/16@1x/1/1" into canvas due to CORS.
       // Have to send url and id all the way to background.js in extension.
-      window.postMessage({ method: "dominantColor", url: args[0], id: args[1] }, "*");
+      sendExtensionEvent({ method: "dominantColor", url: args[0], id: args[1] });
       method += " implemented!";
       break;
     case "navigateToUrl":
@@ -32,22 +37,22 @@ if (chrome.send == undefined) {
       method += " implemented!";
       break;
     case "getRecentlyClosedTabs":
-      window.postMessage({ method: "getRecentlyClosed" }, "*");
+      sendExtensionEvent({ method: "getRecentlyClosed" });
       method += " implemented!";
       break;
     case "reopenTab":
-      window.postMessage({ method: "reopenTab", id: args[0] }, "*");
+      sendExtensionEvent({ method: "reopenTab", id: args[0] });
       method += " implemented!";
       break;
     case "_getFaviconImage":
     case "_getAppImage":
-      window.postMessage({ method: method, url: args[0], id: args[1] }, "*");
+      sendExtensionEvent({ method: method, url: args[0], id: args[1] });
       method += " custom command implemented!";
       break;
     case "getForeignSessions":
     case "getApps":
     case "_getSettings":
-      window.postMessage({ method: method }, "*");
+      sendExtensionEvent({ method: method });
       method += " implemented!";
       break;
     case "openForeignSession":
@@ -58,14 +63,14 @@ if (chrome.send == undefined) {
       }
 
       for (var i = 0; i < idList.length; i++) {
-        window.postMessage({ method: "openForeignSession", id: idList[i] }, "*");
+        sendExtensionEvent({ method: "openForeignSession", id: idList[i] });
       }
       method += " implemented!";
       break;
     case "launchApp":
     case "uninstallApp":
     case "createAppShortcut":
-      window.postMessage({ method: method, id: args[0] }, "*");
+      sendExtensionEvent({ method: method, id: args[0] });
       method += " implemented!";
       break;
     case "pageSelected":
@@ -75,7 +80,7 @@ if (chrome.send == undefined) {
       break;
     }
     console.log("chrome.send stub: " + method);
-  }
+  };
 }
 
 // Since the extension now loads earlier to avoid showing the search bar,

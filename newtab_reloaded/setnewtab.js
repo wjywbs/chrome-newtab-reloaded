@@ -33,26 +33,26 @@ var loaded = false;
     htmlText = htmlText.replace(new RegExp("\\$EXTENSION_URL", "g"), chrome.extension.getURL(""));
     document.write(htmlText);
 
-    window.addEventListener("message", function(event) {
-      switch (event.data.method) {
+    window.addEventListener("extensionEvent", function(event) {
+      switch (event.detail.method) {
       case "topSites":
       case "getRecentlyClosed":
       case "getForeignSessions":
       case "getApps":
       case "_getSettings":
-        port.postMessage({ method: event.data.method });
+        port.postMessage({ method: event.detail.method });
         break;
       case "dominantColor":
       case "_getFaviconImage":
       case "_getAppImage":
-        port.postMessage({ method: event.data.method, url: event.data.url, id: event.data.id });
+        port.postMessage({ method: event.detail.method, url: event.detail.url, id: event.detail.id });
         break;
       case "reopenTab":
       case "openForeignSession":
       case "launchApp":
       case "uninstallApp":
       case "createAppShortcut":
-        port.postMessage({ method: event.data.method, id: event.data.id });
+        port.postMessage({ method: event.detail.method, id: event.detail.id });
         break;
       }
     }, false);
