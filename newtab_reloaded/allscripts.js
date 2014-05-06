@@ -12,6 +12,7 @@ if (chrome.send == undefined) {
       method += " implemented!";
       break;
     case "getFaviconDominantColor":
+    case "getAppIconDominantColor":
       // This page can't access chrome://favicon and can not load images from
       // "chrome-search://favicon/size/16@1x/1/1" into canvas due to CORS.
       // Have to send url and id all the way to background.js in extension.
@@ -7330,7 +7331,7 @@ cr.define('ntp', function() {
         this.imgDiv_ = this.querySelector('.app-icon-div');
         this.addLaunchClickTarget_(this.imgDiv_);
         this.imgDiv_.title = this.appData_.full_name;
-        chrome.send('getAppIconDominantColor', [this.id]);
+        chrome.send('getAppIconDominantColor', [this.appImgSrc_, this.id]);
       } else {
         this.addLaunchClickTarget_(this.appImgContainer_);
         this.appImgContainer_.title = this.appData_.full_name;
@@ -11277,7 +11278,16 @@ window.addEventListener("message", function(event) {
 
     if (item.icons && item.icons.length > 0) {
       item.icon_big = item.icons[item.icons.length - 1].url;
-      item.icon_small = item.icons[0].url; // TODO: fix size
+      item.icon_small = item.icons[0].url;
+      item.icon_big_exists = true;
+      item.icon_small_exists = true;
+
+      if (item.icons.length == 1) {
+        if (item.icons[0].size < 128)
+          item.icon_big_exists = false;
+        else
+          item.icon_small_exists = false;
+      }
     } else {
       item.icon_big = "chrome://extension-icon/" + item.id + "/128/0";
       item.icon_small = "chrome://extension-icon/" + item.id + "/16/0";
