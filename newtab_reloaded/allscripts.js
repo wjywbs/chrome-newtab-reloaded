@@ -47,8 +47,9 @@ if (chrome.send == undefined) {
       break;
     case "_getFaviconImage":
     case "_getAppImage":
+    case "generateAppForLink":
       sendExtensionEvent({ method: method, url: args[0], id: args[1] });
-      method += " custom command implemented!";
+      method += " implemented!";
       break;
     case "getForeignSessions":
     case "getApps":

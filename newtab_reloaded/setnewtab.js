@@ -45,6 +45,7 @@ var loaded = false;
       case "dominantColor":
       case "_getFaviconImage":
       case "_getAppImage":
+      case "generateAppForLink":
         port.postMessage({ method: event.detail.method, url: event.detail.url, id: event.detail.id });
         break;
       case "reopenTab":

@@ -101,6 +101,10 @@ chrome.runtime.onConnect.addListener(function(port) {
     case "createAppShortcut":
       chrome.management.createAppShortcut(request.id);
       break;
+
+    case "generateAppForLink":
+      chrome.management.generateAppForLink(request.url, request.id);
+      break;
     }
   });
 
