@@ -11023,6 +11023,11 @@ var loadLocalizedData = function() {
   if (xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200) {
     eval(xhr.responseText);
 
+    if (cr.isMac)
+      loadTimeData.data_.fontfamily = "'Lucida Grande', sans-serif";
+    if (cr.isLinux)
+      loadTimeData.data_.fontfamily = "Ubuntu, Arial, sans-serif";
+
     loadTimeData.data_.showMostvisited = true;
     loadTimeData.data_.showOtherSessionsMenu = true;
     loadTimeData.data_.showRecentlyClosed = true;
