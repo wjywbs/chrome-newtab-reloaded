@@ -35,7 +35,24 @@ function applySettings() {
   loadSettings();
 }
 
+function toggleNotLoadDetails() {
+  var details = $("notLoadDetails");
+  if (details.className == "hide") {
+    details.className = "show";
+    $("notLoadToggle").innerHTML = "Hide Details";
+
+    // Prediction service does not need to be enabled on Chrome 37+.
+    var version = window.navigator.appVersion.match(/\d+\.\d+\.\d+\.\d+/);
+    if (version && Number(version[0].split(".")[0]) >= 37)
+      $("notLoadPredictionService").className = "hide";
+  } else {
+    details.className = "hide";
+    $("notLoadToggle").innerHTML = "Show Details";
+  }
+}
+
 window.onload = function() {
   loadSettings();
   $("apply").addEventListener("click", applySettings);
+  $("notLoadToggle").addEventListener("click", toggleNotLoadDetails);
 };
