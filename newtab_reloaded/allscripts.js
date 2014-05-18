@@ -80,6 +80,18 @@ if (chrome.send == undefined) {
       localStorage.setItem("ntp_shown_page_index", args[1]);
       method += " implemented!";
       break;
+    case "setPageIndex":
+      ntr.setPageIndex(args[1]);
+      method += " implemented!";
+      break;
+    case "saveAppPageName":
+      ntr.saveAppPageName(args[0], args[1]);
+      method += " implemented!";
+      break;
+    case "reorderApps":
+      ntr.reorderApps(args[1]);
+      method += " implemented!";
+      break;
     }
     console.log("chrome.send stub: " + method);
   };
@@ -11269,18 +11281,75 @@ var setTopSite = function() {
   }
 };
 
-// Duplicate with loadTimeData.js
-window.addEventListener("message", function(event) {
-  console.log(event.data);
-  var processAppInfo = function(item) {
+cr.define("ntr", function() {
+  var appPageIndex, appPageSettings;
+  var appPageSettingsName = "ntp_app_settings";
+
+  function loadDefaultAppPageSettings() {
+    appPageSettings = {
+      pageNames: {
+        maxIndex: 0
+      },
+      appOrder: {}
+    };
+  }
+
+  function loadAppPageSettings() {
+    var settings = localStorage.getItem(appPageSettingsName);
+    if (!settings) {
+      loadDefaultAppPageSettings();
+      return;
+    }
+
+    try {
+      appPageSettings = JSON.parse(settings);
+    } catch(e) {
+      loadDefaultAppPageSettings();
+    }
+  }
+
+  loadAppPageSettings();
+
+  function saveAppPageSettings() {
+    localStorage.setItem(appPageSettingsName, JSON.stringify(appPageSettings));
+  }
+
+  function setPageIndex(pageIndex) {
+    appPageIndex = pageIndex;
+  }
+
+  function saveAppPageName(name, index) {
+    appPageSettings.pageNames[index] = name;
+    if (index > appPageSettings.pageNames.maxIndex)
+      appPageSettings.pageNames.maxIndex = index;
+
+    saveAppPageSettings();
+  }
+
+  function reorderApps(apps) {
+    for (var i = 0; i < apps.length; i++) {
+      appPageSettings.appOrder[apps[i]] = {
+        pageIndex: appPageIndex,
+        order: i
+      };
+    }
+    saveAppPageSettings();
+  }
+
+  function processAppInfo(item) {
     if (!item.isApp)
         return null;
 
-    // Put bookmark links at last
-    if (item.type == "hosted_app" && item.updateUrl == undefined)
+    var appOrder = appPageSettings.appOrder[item.id];
+    if (appOrder) {
+      item.app_launch_ordinal = appOrder.order;
+      item.page_index = appOrder.pageIndex;
+    } else if (item.type == "hosted_app" && item.updateUrl == undefined) {
+      // Put bookmark links at last
       item.app_launch_ordinal = "z" + item.name;
-    else
+    } else {
       item.app_launch_ordinal = "t" + item.name;
+    }
 
     if (item.icons && item.icons.length > 0) {
       item.icon_big = item.icons[item.icons.length - 1].url;
@@ -11305,7 +11374,32 @@ window.addEventListener("message", function(event) {
     item.full_name = item.name;
     item.title = item.name;
     return item;
+  }
+
+  function getAppPageNames() {
+    var names = [];
+    if (!appPageSettings.pageNames[0])
+      names.push(loadTimeData.data_.appDefaultPageName);
+
+    for (var i = 0; i <= appPageSettings.pageNames.maxIndex; i++)
+      if (appPageSettings.pageNames[i])
+        names.push(appPageSettings.pageNames[i]);
+
+    return names;
+  }
+
+  return {
+    setPageIndex: setPageIndex,
+    saveAppPageName: saveAppPageName,
+    reorderApps: reorderApps,
+    processAppInfo: processAppInfo,
+    getAppPageNames: getAppPageNames
   };
+});
+
+// Duplicate with loadTimeData.js
+window.addEventListener("message", function(event) {
+  console.log(event.data);
 
   if (event.data.method == "topSitesResult") {
     topsite = event.data.result;
@@ -11355,19 +11449,19 @@ window.addEventListener("message", function(event) {
   } else if (event.data.method == "appsResult") {
     // Process the result to fit the previous format.
     var result = {
-      appPageNames: [ loadTimeData.data_.appDefaultPageName ],
+      appPageNames: ntr.getAppPageNames(),
       apps: []
     };
 
     var apps = event.data.result;
     for (var i = 0; i < apps.length; i++) {
-      var item = processAppInfo(apps[i]);
+      var item = ntr.processAppInfo(apps[i]);
       if (item != null)
         result.apps.push(item);
     }
     ntp.getAppsCallback(result);
   } else if (event.data.method == "appInstalled") {
-    var item = processAppInfo(event.data.result);
+    var item = ntr.processAppInfo(event.data.result);
     if (item != null)
       ntp.appAdded(item, false);
   } else if (event.data.method == "appUninstalled") {
@@ -11377,7 +11471,7 @@ window.addEventListener("message", function(event) {
       ntp.appRemoved(item, true, true);
   } else if (event.data.method == "appEnabled" ||
              event.data.method == "appDisabled") {
-    var item = processAppInfo(event.data.result);
+    var item = ntr.processAppInfo(event.data.result);
     if (item != null)
       ntp.appRemoved(item, false, true);
   } else if (event.data.method == "onRecentlyClosed") {
