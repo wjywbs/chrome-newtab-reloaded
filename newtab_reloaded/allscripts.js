@@ -11373,6 +11373,7 @@ cr.define("ntr", function() {
 
     item.full_name = item.name;
     item.title = item.name;
+    item.detailsUrl = item.homepageUrl;
     return item;
   }
 
