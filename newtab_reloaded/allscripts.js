@@ -7418,7 +7418,7 @@ cr.define('ntp', function() {
       if (this.appImgSrc_) {
         var imgId = "appimg-" + this.appData_.id
         this.appImg_.id = imgId;
-        chrome.send("_getAppImage", [this.appImgSrc_, imgId]);
+        chrome.send("_getAppImage", [this.appImgSrc_ + "?" + new Date().getTime(), imgId]);
         this.appImg_.classList.remove('invisible');
         this.appImgSrc_ = null;
       }
