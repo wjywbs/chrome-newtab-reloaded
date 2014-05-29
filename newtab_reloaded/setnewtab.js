@@ -55,6 +55,9 @@ var loaded = false;
       case "createAppShortcut":
         port.postMessage({ method: event.detail.method, id: event.detail.id });
         break;
+      case "setLaunchType":
+        port.postMessage({ method: event.detail.method, id: event.detail.id, type: event.detail.type });
+        break;
       }
     }, false);
   }

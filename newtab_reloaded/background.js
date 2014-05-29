@@ -105,6 +105,10 @@ chrome.runtime.onConnect.addListener(function(port) {
     case "generateAppForLink":
       chrome.management.generateAppForLink(request.url, request.id);
       break;
+
+    case "setLaunchType":
+      chrome.management.setLaunchType(request.id, request.type);
+      break;
     }
   });
 

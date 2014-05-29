@@ -92,6 +92,10 @@ if (chrome.send == undefined) {
       ntr.reorderApps(args[1]);
       method += " implemented!";
       break;
+    case "setLaunchType":
+      sendExtensionEvent({ method: method, id: args[0], type: args[1] });
+      method += " implemented!";
+      break;
     }
     console.log("chrome.send stub: " + method);
   };
@@ -7145,17 +7149,17 @@ cr.define('ntp', function() {
       this.launch_.addEventListener('activate', this.onLaunch_.bind(this));
 
       menu.appendChild(cr.ui.MenuItem.createSeparator());
-      if (loadTimeData.getBoolean('enableStreamlinedHostedApps'))
-        this.launchRegularTab_ = this.appendMenuItem_('applaunchtypetab');
-      else
-        this.launchRegularTab_ = this.appendMenuItem_('applaunchtyperegular');
-      this.launchPinnedTab_ = this.appendMenuItem_('applaunchtypepinned');
-      if (!cr.isMac)
-        this.launchNewWindow_ = this.appendMenuItem_('applaunchtypewindow');
-      this.launchFullscreen_ = this.appendMenuItem_('applaunchtypefullscreen');
+      this.launchRegularTab_ =
+          this.appendMenuItem_('applaunchtyperegular', 'OPEN_AS_REGULAR_TAB');
+      this.launchPinnedTab_ =
+          this.appendMenuItem_('applaunchtypepinned', 'OPEN_AS_PINNED_TAB');
+      this.launchNewWindow_ =
+          this.appendMenuItem_('applaunchtypewindow', 'OPEN_AS_WINDOW');
+      this.launchFullscreen_ =
+          this.appendMenuItem_('applaunchtypefullscreen', 'OPEN_FULL_SCREEN');
 
       var self = this;
-      this.forAllLaunchTypes_(function(launchTypeButton, id) {
+      this.forAllLaunchTypes_(function(launchTypeButton, name) {
         launchTypeButton.addEventListener('activate',
             self.onLaunchTypeChanged_.bind(self));
       });
@@ -7187,21 +7191,24 @@ cr.define('ntp', function() {
      * Appends a menu item to |this.menu|.
      * @param {?string} textId If non-null, the ID for the localized string
      *     that acts as the item's label.
+     * @param {?string} name If non-null, the name of the button.
      */
-    appendMenuItem_: function(textId) {
+    appendMenuItem_: function(textId, name) {
       var button = cr.doc.createElement('button');
       this.menu.appendChild(button);
       cr.ui.decorate(button, cr.ui.MenuItem);
       if (textId)
         button.textContent = loadTimeData.getString(textId);
+      if (name)
+        button.name = name;
       return button;
     },
 
     /**
      * Iterates over all the launch type menu items.
-     * @param {function(cr.ui.MenuItem, number)} f The function to call for each
+     * @param {function(cr.ui.MenuItem, string)} f The function to call for each
      *     menu item. The parameters to the function include the menu item and
-     *     the associated launch ID.
+     *     the associated launch type name.
      */
     forAllLaunchTypes_: function(f) {
       // Order matters: index matches launchType id.
@@ -7214,7 +7221,7 @@ cr.define('ntp', function() {
         if (!launchTypes[i])
           continue;
 
-        f(launchTypes[i], i);
+        f(launchTypes[i], launchTypes[i].name);
       }
     },
 
@@ -7227,14 +7234,39 @@ cr.define('ntp', function() {
 
       this.launch_.textContent = app.appData.title;
 
-      var launchTypeRegularTab = this.launchRegularTab_;
-      this.forAllLaunchTypes_(function(launchTypeButton, id) {
+      var availableLaunchTypes = app.appData.availableLaunchTypes;
+      if (availableLaunchTypes) {
+        this.forAllLaunchTypes_(function(launchTypeButton, name) {
+          launchTypeButton.hidden = true;
+        });
+
+        for (var i = 0; i < availableLaunchTypes.length; i++) {
+          switch (availableLaunchTypes[i]) {
+          case 'OPEN_AS_REGULAR_TAB':
+            this.launchRegularTab_.hidden = false;
+            break;
+          case 'OPEN_AS_PINNED_TAB':
+            this.launchPinnedTab_.hidden = false;
+            break;
+          case 'OPEN_AS_WINDOW':
+            this.launchNewWindow_.hidden = false;
+            break;
+          case 'OPEN_FULL_SCREEN':
+            this.launchFullscreen_.hidden = false;
+            break;
+          }
+        }
+      }
+
+      this.forAllLaunchTypes_(function(launchTypeButton, name) {
         launchTypeButton.disabled = false;
-        launchTypeButton.checked = app.appData.launch_type == id;
-        // Streamlined hosted apps should only show the "Open as tab" button.
-        launchTypeButton.hidden = app.appData.packagedApp ||
-            (loadTimeData.getBoolean('enableStreamlinedHostedApps') &&
-             launchTypeButton != launchTypeRegularTab);
+        launchTypeButton.checked = app.appData.launch_type == name;
+        if (availableLaunchTypes) {
+          if (app.appData.packagedApp)
+            launchTypeButton.hidden = true;
+        } else {
+          launchTypeButton.hidden = app.appData.packagedApp;
+        }
       });
 
       this.launchTypeMenuSeparator_.hidden = app.appData.packagedApp;
@@ -7267,18 +7299,12 @@ cr.define('ntp', function() {
       var pressed = e.currentTarget;
       var app = this.app_;
       var targetLaunchType = pressed;
-      // Streamlined hosted apps can only toggle between open as window and open
-      // as tab.
-      if (loadTimeData.getBoolean('enableStreamlinedHostedApps')) {
-        targetLaunchType = this.launchRegularTab_.checked ?
-            this.launchNewWindow_ : this.launchRegularTab_;
-      }
-      this.forAllLaunchTypes_(function(launchTypeButton, id) {
+      this.forAllLaunchTypes_(function(launchTypeButton, name) {
         if (launchTypeButton == targetLaunchType) {
-          chrome.send('setLaunchType', [app.appId, id]);
+          chrome.send('setLaunchType', [app.appId, name]);
           // Manually update the launch type. We will only get
           // appsPrefChangeCallback calls after changes to other NTP instances.
-          app.appData.launch_type = id;
+          app.appData.launch_type = name;
         }
       });
     },
@@ -11374,6 +11400,7 @@ cr.define("ntr", function() {
     item.full_name = item.name;
     item.title = item.name;
     item.detailsUrl = item.homepageUrl;
+    item.launch_type = item.launchType;
     return item;
   }
 
