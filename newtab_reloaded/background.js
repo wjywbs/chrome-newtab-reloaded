@@ -4,6 +4,13 @@ chrome.i18n.getAcceptLanguages(function(data) {
   languages = data;
 });
 
+var webstoreApp;
+if (chrome.management) {
+  chrome.management.get("ahfgeienlihckogmohjhadlkjgocpleb", function(app) {
+    webstoreApp = app;
+  });
+}
+
 chrome.runtime.onConnect.addListener(function(port) {
   if (port.name != "newtabreloaded") {
     port.disconnect();
@@ -72,6 +79,8 @@ chrome.runtime.onConnect.addListener(function(port) {
 
     case "getApps":
       chrome.management.getAll(function(data) {
+        if (webstoreApp)
+          data.splice(0, 0, webstoreApp);
         port.postMessage({ method: "appsResult", result: data});
         console.log("Sent getApps response");
       });

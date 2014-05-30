@@ -11370,6 +11370,9 @@ cr.define("ntr", function() {
     if (appOrder) {
       item.app_launch_ordinal = appOrder.order;
       item.page_index = appOrder.pageIndex;
+    } else if (item.id == "ahfgeienlihckogmohjhadlkjgocpleb") {
+      // Put web store at first
+      item.app_launch_ordinal = "a" + item.name;
     } else if (item.type == "hosted_app" && item.updateUrl == undefined) {
       // Put bookmark links at last
       item.app_launch_ordinal = "z" + item.name;
