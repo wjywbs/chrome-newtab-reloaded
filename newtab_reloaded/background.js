@@ -79,7 +79,7 @@ chrome.runtime.onConnect.addListener(function(port) {
 
     case "getApps":
       chrome.management.getAll(function(data) {
-        if (webstoreApp)
+        if (webstoreApp && getSettings().mShowWebstore.value)
           data.splice(0, 0, webstoreApp);
         port.postMessage({ method: "appsResult", result: data});
         console.log("Sent getApps response");
@@ -168,30 +168,15 @@ function getImageDataFromUrl(url, callback) {
   };
 }
 
+function loadOption(option) {
+  var value = localStorage.getItem(option.key);
+  option.value = getOptionValue(option, value);
+}
+
 function getSettings() {
-  var loadOption = function(option) {
-    var value = localStorage.getItem(option.key);
-
-    if (value == null) {
-      option.value = option.defaultValue;
-      return;
-    }
-
-    switch (typeof(option.defaultValue)) {
-    case "number":
-      if (isNaN(value))
-        option.value = option.defaultValue;
-      else
-        option.value = Number(value);
-      break;
-
-    default:
-      option.value = value;
-    }
-  };
-
   loadOption(options.mTilesPerRow);
   loadOption(options.mNumberOfTiles);
+  loadOption(options.mShowWebstore);
   return options;
 }
 

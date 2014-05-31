@@ -7,30 +7,32 @@ function $(id) {
   return document.getElementById(id);
 }
 
+function getElementPropertyName(option) {
+  return typeof(option.defaultValue) == "boolean" ? "checked" : "value";
+}
+
 function setValueFromLocalStorage(option) {
+  var property = getElementPropertyName(option);
   var value = localStorage.getItem(option.key);
-  if (value == null)
-    $(option.element).value = option.defaultValue;
-  else
-    $(option.element).value = value;
+  $(option.element)[property] = getOptionValue(option, value);
 }
 
 function setLocalStorageFromValue(option) {
-  var value = $(option.element).value;
-  if (typeof(option.defaultValue) == "number" && isNaN(value))
-    localStorage.setItem(option.key, option.defaultValue);
-  else
-    localStorage.setItem(option.key, value);
+  var property = getElementPropertyName(option);
+  var value = $(option.element)[property];
+  localStorage.setItem(option.key, getOptionValue(option, value));
 }
 
 function loadSettings() {
   setValueFromLocalStorage(options.mTilesPerRow);
   setValueFromLocalStorage(options.mNumberOfTiles);
+  setValueFromLocalStorage(options.mShowWebstore);
 }
 
 function applySettings() {
   setLocalStorageFromValue(options.mTilesPerRow);
   setLocalStorageFromValue(options.mNumberOfTiles);
+  setLocalStorageFromValue(options.mShowWebstore);
 
   loadSettings();
 }
