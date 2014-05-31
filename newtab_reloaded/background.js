@@ -177,6 +177,7 @@ function getSettings() {
   loadOption(options.mTilesPerRow);
   loadOption(options.mNumberOfTiles);
   loadOption(options.mShowWebstore);
+  loadOption(options.mAppsPerRow);
   return options;
 }
 

@@ -13,6 +13,11 @@ var options = {
     key: "appsPage.showWebstore",
     element: "mShowWebstore",
     defaultValue: true
+  },
+  mAppsPerRow: {
+    key: "appsPage.appsPerRow",
+    element: "mAppsPerRow",
+    defaultValue: 6
   }
 };
 

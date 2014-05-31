@@ -7666,6 +7666,17 @@ cr.define('ntp', function() {
   TilePage.initGridValues(appsPageGridValues);
 
   /**
+   * Changing the returned object will change the internal object as well.
+   */
+  function getAppsPageGridValues() {
+    return appsPageGridValues;
+  }
+
+  function loadAppsPageSettings() {
+    TilePage.initGridValues(appsPageGridValues);
+  }
+
+  /**
    * Creates a new AppsPage object.
    * @constructor
    * @extends {TilePage}
@@ -7897,6 +7908,8 @@ cr.define('ntp', function() {
     APP_LAUNCH: APP_LAUNCH,
     AppsPage: AppsPage,
     launchAppAfterEnable: launchAppAfterEnable,
+    getAppsPageGridValues: getAppsPageGridValues,
+    loadAppsPageSettings: loadAppsPageSettings
   };
 });
 
@@ -11513,6 +11526,10 @@ window.addEventListener("message", function(event) {
     var mostVisitedPageGridValues = ntp.getMostVisitedPageGridValues();
     mostVisitedPageGridValues.maxColCount = options.mTilesPerRow.value;
     ntp.loadMostVisitedPageSettings(options.mNumberOfTiles.value);
+
+    var appsPageGridValues = ntp.getAppsPageGridValues();
+    appsPageGridValues.maxColCount = options.mAppsPerRow.value;
+    ntp.loadAppsPageSettings();
 
     // Manually call onLoad
     ntp.onLoad();

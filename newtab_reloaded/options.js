@@ -27,12 +27,14 @@ function loadSettings() {
   setValueFromLocalStorage(options.mTilesPerRow);
   setValueFromLocalStorage(options.mNumberOfTiles);
   setValueFromLocalStorage(options.mShowWebstore);
+  setValueFromLocalStorage(options.mAppsPerRow);
 }
 
 function applySettings() {
   setLocalStorageFromValue(options.mTilesPerRow);
   setLocalStorageFromValue(options.mNumberOfTiles);
   setLocalStorageFromValue(options.mShowWebstore);
+  setLocalStorageFromValue(options.mAppsPerRow);
 
   loadSettings();
 }
