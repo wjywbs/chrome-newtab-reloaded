@@ -39,24 +39,30 @@ function applySettings() {
   loadSettings();
 }
 
-function toggleNotLoadDetails() {
-  var details = $("notLoadDetails");
+function toggleDetails(pane, button) {
+  var details = $(pane);
   if (details.className == "hide") {
     details.className = "show";
-    $("notLoadToggle").innerHTML = "Hide Details";
-
-    // Prediction service does not need to be enabled on Chrome 37+.
-    var version = window.navigator.appVersion.match(/\d+\.\d+\.\d+\.\d+/);
-    if (version && Number(version[0].split(".")[0]) >= 37)
-      $("notLoadPredictionService").className = "hide";
+    $(button).innerHTML = "Hide Details";
   } else {
     details.className = "hide";
-    $("notLoadToggle").innerHTML = "Show Details";
+    $(button).innerHTML = "Show Details";
   }
+}
+
+function toggleNotLoadDetails() {
+  toggleDetails("notLoadDetails", "notLoadToggle");
+
+  // Prediction service does not need to be enabled on Chrome 36+.
+  var version = window.navigator.appVersion.match(/\d+\.\d+\.\d+\.\d+/);
+  if (version && Number(version[0].split(".")[0]) >= 36)
+    $("notLoadPredictionService").className = "hide";
 }
 
 window.onload = function() {
   loadSettings();
   $("apply").addEventListener("click", applySettings);
   $("notLoadToggle").addEventListener("click", toggleNotLoadDetails);
+  $("appsOpenNewTabToggle").addEventListener("click", toggleDetails.bind(
+      this, "appsOpenNewTabDetails", "appsOpenNewTabToggle"));
 };

@@ -19,6 +19,10 @@ Partially copied from Bootstrap Docs css.
   padding-top: 7px;
 }
 
+.help-block {
+  color: #737373;
+}
+
 .bs-example {
     position: relative;
     padding: 45px 15px 15px;
