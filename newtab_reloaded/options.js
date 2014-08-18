@@ -59,7 +59,7 @@ function toggleNotLoadDetails() {
     $("notLoadPredictionService").className = "hide";
 }
 
-function requestFeature(checkbox, permission) {
+function requestFeature(checkbox, permission, reload) {
   var reloadBackgroundPage = function() {
     chrome.runtime.getBackgroundPage(function(window) {
       window.location = window.location;
@@ -69,7 +69,14 @@ function requestFeature(checkbox, permission) {
   if (checkbox.checked) {
     chrome.permissions.request({ permissions: permission }, function(result) {
       checkbox.checked = result;
-      reloadBackgroundPage();
+      if (result) {
+        if (reload) {
+          localStorage.setItem("openOptionsPageOnStartup", "true");
+          chrome.runtime.reload();
+        } else {
+          reloadBackgroundPage();
+        }
+      }
     });
   } else {
     chrome.permissions.remove({ permissions: permission }, function(result) {
@@ -79,10 +86,10 @@ function requestFeature(checkbox, permission) {
   }
 }
 
-function loadFeature(checkboxName, permission) {
+function loadFeature(checkboxName, permission, reload) {
   var checkbox = $(checkboxName);
   checkbox.addEventListener("change",
-      requestFeature.bind(this, checkbox, permission));
+      requestFeature.bind(this, checkbox, permission, reload));
 
   chrome.permissions.contains({
     permissions: permission
@@ -98,8 +105,8 @@ function loadAllFeatures() {
     return;
   }
 
-  loadFeature("mShowAppsPage", ["management"]);
-  loadFeature("mShowRecentTabs", ["sessions", "tabs"]);
+  loadFeature("mShowAppsPage", ["management"], true);
+  loadFeature("mShowRecentTabs", ["sessions", "tabs"], false);
 }
 
 window.onload = function() {

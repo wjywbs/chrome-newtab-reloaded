@@ -11,6 +11,13 @@ if (chrome.management.get) {
   });
 }
 
+if (localStorage.getItem("openOptionsPageOnStartup") == "true") {
+  localStorage.setItem("openOptionsPageOnStartup", "false");
+  chrome.tabs.create({
+    url: chrome.extension.getURL(chrome.runtime.getManifest().options_page)
+  });
+}
+
 chrome.runtime.onConnect.addListener(function(port) {
   if (port.name != "newtabreloaded") {
     port.disconnect();
