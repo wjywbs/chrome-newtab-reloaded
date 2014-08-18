@@ -9965,7 +9965,9 @@ cr.define('ntp', function() {
     if (loadTimeData.getBoolean('showMostvisited'))
       sectionsToWaitFor++;
     if (loadTimeData.getBoolean('showApps')) {
-      sectionsToWaitFor++;
+      // Fix various bugs when showing apps is not enabled.
+      if (loadTimeData.getBoolean('showAppsPage'))
+        sectionsToWaitFor++;
       if (loadTimeData.getBoolean('showAppLauncherPromo')) {
         $('app-launcher-promo-close-button').addEventListener('click',
             function() { chrome.send('stopShowingAppLauncherPromo'); });
@@ -11531,13 +11533,17 @@ window.addEventListener("message", function(event) {
     appsPageGridValues.maxColCount = options.mAppsPerRow.value;
     ntp.loadAppsPageSettings();
 
+    loadTimeData.data_.showAppsPage = options.showAppsPage;
+    if (options.showAppsPage)
+      restoreLastPage();
+
     // Manually call onLoad
     ntp.onLoad();
   }
 }, false);
 
 // Restore last page.
-(function() {
+var restoreLastPage = function() {
   var shownPage = localStorage.getItem("ntp_shown_page_type");
   if (shownPage != null && Number(shownPage) != NaN)
     loadTimeData.data_.shown_page_type = Number(shownPage);
@@ -11545,7 +11551,7 @@ window.addEventListener("message", function(event) {
   var shownPageIndex = localStorage.getItem("ntp_shown_page_index");
   if (shownPageIndex != null && Number(shownPageIndex) != NaN)
     loadTimeData.data_.shown_page_index = Number(shownPageIndex);
-})();
+};
 
 window.loaded = true;
 chrome.send("_getSettings");

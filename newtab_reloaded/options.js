@@ -59,8 +59,53 @@ function toggleNotLoadDetails() {
     $("notLoadPredictionService").className = "hide";
 }
 
+function requestFeature(checkbox, permission) {
+  var reloadBackgroundPage = function() {
+    chrome.runtime.getBackgroundPage(function(window) {
+      window.location = window.location;
+    });
+  };
+
+  if (checkbox.checked) {
+    chrome.permissions.request({ permissions: permission }, function(result) {
+      checkbox.checked = result;
+      reloadBackgroundPage();
+    });
+  } else {
+    chrome.permissions.remove({ permissions: permission }, function(result) {
+      checkbox.checked = !result;
+      reloadBackgroundPage();
+    });
+  }
+}
+
+function loadFeature(checkboxName, permission) {
+  var checkbox = $(checkboxName);
+  checkbox.addEventListener("change",
+      requestFeature.bind(this, checkbox, permission));
+
+  chrome.permissions.contains({
+    permissions: permission
+  }, function(result) {
+    checkbox.checked = result;
+  });
+}
+
+function loadAllFeatures() {
+  var manifest = chrome.runtime.getManifest();
+  if (!manifest.optional_permissions) {
+    $("featuresPane").className = "hide";
+    return;
+  }
+
+  loadFeature("mShowAppsPage", ["management"]);
+  loadFeature("mShowRecentTabs", ["sessions", "tabs"]);
+}
+
 window.onload = function() {
   loadSettings();
+  loadAllFeatures();
+
   $("apply").addEventListener("click", applySettings);
   $("notLoadToggle").addEventListener("click", toggleNotLoadDetails);
   $("appsOpenNewTabToggle").addEventListener("click", toggleDetails.bind(

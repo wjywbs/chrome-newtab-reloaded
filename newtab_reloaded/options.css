@@ -23,6 +23,10 @@ Partially copied from Bootstrap Docs css.
   color: #737373;
 }
 
+.form-group-small {
+  margin-bottom: 0;
+}
+
 .bs-example {
     position: relative;
     padding: 45px 15px 15px;
@@ -32,6 +36,11 @@ Partially copied from Bootstrap Docs css.
     border-color: #e5e5e5 #eee #eee;
     border-style: solid;
     border-width: 1px 0
+}
+
+.bs-example-small {
+    padding-top: 25px;
+    padding-bottom: 20px;
 }
 
 /*.bs-example:hover {

@@ -5,7 +5,7 @@ chrome.i18n.getAcceptLanguages(function(data) {
 });
 
 var webstoreApp;
-if (chrome.management) {
+if (chrome.management.get) {
   chrome.management.get("ahfgeienlihckogmohjhadlkjgocpleb", function(app) {
     webstoreApp = app;
   });
@@ -133,22 +133,26 @@ chrome.runtime.onConnect.addListener(function(port) {
       appEnabledHandler = makeHandler("appEnabled"),
       appDisabledHandler = makeHandler("appDisabled");
 
-  chrome.management.onInstalled.addListener(appInstalledHandler);
-  chrome.management.onUninstalled.addListener(appUninstalledHandler);
-  chrome.management.onEnabled.addListener(appEnabledHandler);
-  chrome.management.onDisabled.addListener(appDisabledHandler);
+  if (chrome.management.get) {
+    chrome.management.onInstalled.addListener(appInstalledHandler);
+    chrome.management.onUninstalled.addListener(appUninstalledHandler);
+    chrome.management.onEnabled.addListener(appEnabledHandler);
+    chrome.management.onDisabled.addListener(appDisabledHandler);
+  }
 
   var recentlyClosedHandler = makeHandler("onRecentlyClosed");
-  if (chrome.sessions.onChanged)
+  if (chrome.sessions && chrome.sessions.onChanged)
     chrome.sessions.onChanged.addListener(recentlyClosedHandler);
 
   port.onDisconnect.addListener(function() {
-    chrome.management.onInstalled.removeListener(appInstalledHandler);
-    chrome.management.onUninstalled.removeListener(appUninstalledHandler);
-    chrome.management.onEnabled.removeListener(appEnabledHandler);
-    chrome.management.onDisabled.removeListener(appDisabledHandler);
+    if (chrome.management.get) {
+      chrome.management.onInstalled.removeListener(appInstalledHandler);
+      chrome.management.onUninstalled.removeListener(appUninstalledHandler);
+      chrome.management.onEnabled.removeListener(appEnabledHandler);
+      chrome.management.onDisabled.removeListener(appDisabledHandler);
+    }
 
-    if (chrome.sessions.onChanged)
+    if (chrome.sessions && chrome.sessions.onChanged)
       chrome.sessions.onChanged.removeListener(recentlyClosedHandler);
   });
 });
@@ -178,6 +182,7 @@ function getSettings() {
   loadOption(options.mNumberOfTiles);
   loadOption(options.mShowWebstore);
   loadOption(options.mAppsPerRow);
+  options.showAppsPage = (chrome.management.get != undefined);
   return options;
 }
 
