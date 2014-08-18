@@ -11475,7 +11475,7 @@ window.addEventListener("message", function(event) {
     var result = event.data.result.data;
     for (var i = 0; i < result.length; i++) {
       var item = result[i];
-      item.name = item.info;
+      item.name = item.deviceName || item.info;
       item.collapsed = false;
       item.modifiedTime = "";
       item.tag = new Array();
