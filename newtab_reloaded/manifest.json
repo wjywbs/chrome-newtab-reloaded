@@ -3,7 +3,7 @@
   "name": "__MSG_extName__",
   "description": "__MSG_extDesc__",
   "short_name": "__MSG_extShortName__",
-  "version": "0.0.9.5",
+  "version": "0.1.0",
   
   "default_locale": "en",
   "icons": {
@@ -236,8 +236,9 @@
   
   "options_page": "options.htm",
   
-  "permissions": ["topSites", "chrome://favicon/", "sessions", "tabs", "management"],
+  "permissions": ["topSites", "chrome://favicon/"],
   "incognito": "split",
+  "optional_permissions": ["sessions", "tabs", "management"],
   
   "minimum_chrome_version" : "33"
 }
