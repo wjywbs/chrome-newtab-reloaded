@@ -3,7 +3,7 @@
   "name": "__MSG_extName__",
   "description": "__MSG_extDesc__",
   "short_name": "__MSG_extShortName__",
-  "version": "0.0.8",
+  "version": "0.0.9.5",
   
   "default_locale": "en",
   "icons": {
@@ -16,7 +16,7 @@
   
   "background": {
     "persistent": false,
-    "scripts": [ "background.js" ]
+    "scripts": [ "config.js", "background.js" ]
   },
   
   "content_scripts": [
@@ -230,10 +230,13 @@
     "allscripts.js",
     "trash.png",
     "suggestions_page.css",
+    "moment-with-langs.min.js",
     "_locales/*"
   ],
   
-  "permissions": ["topSites", "chrome://favicon/"],
+  "options_page": "options.htm",
+  
+  "permissions": ["topSites", "chrome://favicon/", "sessions", "tabs", "management"],
   "incognito": "split",
   
   "minimum_chrome_version" : "33"

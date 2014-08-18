@@ -1,16 +1,22 @@
 
 if (chrome.send == undefined) {
+  var sendExtensionEvent = function(data) {
+    var event = new CustomEvent("extensionEvent", { detail: data });
+    window.dispatchEvent(event);
+  };
+
   chrome.send = function(method, args) {
     switch (method) {
     case "getMostVisited":
-      window.postMessage({ method: "topSites" }, "*");
+      sendExtensionEvent({ method: "topSites" });
       method += " implemented!";
       break;
     case "getFaviconDominantColor":
+    case "getAppIconDominantColor":
       // This page can't access chrome://favicon and can not load images from
       // "chrome-search://favicon/size/16@1x/1/1" into canvas due to CORS.
       // Have to send url and id all the way to background.js in extension.
-      window.postMessage({ method: "dominantColor", url: args[0], id: args[1] }, "*");
+      sendExtensionEvent({ method: "dominantColor", url: args[0], id: args[1] });
       method += " implemented!";
       break;
     case "navigateToUrl":
@@ -31,18 +37,77 @@ if (chrome.send == undefined) {
       chrome.embeddedSearch.newTabPage.undoAllMostVisitedDeletions();
       method += " implemented!";
       break;
+    case "getRecentlyClosedTabs":
+      sendExtensionEvent({ method: "getRecentlyClosed" });
+      method += " implemented!";
+      break;
+    case "reopenTab":
+      sendExtensionEvent({ method: "reopenTab", id: args[0] });
+      method += " implemented!";
+      break;
+    case "_getFaviconImage":
+    case "_getAppImage":
+    case "generateAppForLink":
+      sendExtensionEvent({ method: method, url: args[0], id: args[1] });
+      method += " implemented!";
+      break;
+    case "getForeignSessions":
+    case "getApps":
+    case "_getSettings":
+      sendExtensionEvent({ method: method });
+      method += " implemented!";
+      break;
+    case "openForeignSession":
+      var idList = args[0];
+      if (typeof(args[0]) == "string") {
+        idList = new Array();
+        idList.push(args[0]);
+      }
+
+      for (var i = 0; i < idList.length; i++) {
+        sendExtensionEvent({ method: "openForeignSession", id: idList[i] });
+      }
+      method += " implemented!";
+      break;
+    case "launchApp":
+    case "uninstallApp":
+    case "createAppShortcut":
+      sendExtensionEvent({ method: method, id: args[0] });
+      method += " implemented!";
+      break;
+    case "pageSelected":
+      localStorage.setItem("ntp_shown_page_type", args[0]);
+      localStorage.setItem("ntp_shown_page_index", args[1]);
+      method += " implemented!";
+      break;
+    case "setPageIndex":
+      ntr.setPageIndex(args[1]);
+      method += " implemented!";
+      break;
+    case "saveAppPageName":
+      ntr.saveAppPageName(args[0], args[1]);
+      method += " implemented!";
+      break;
+    case "reorderApps":
+      ntr.reorderApps(args[1]);
+      method += " implemented!";
+      break;
+    case "setLaunchType":
+      sendExtensionEvent({ method: method, id: args[0], type: args[1] });
+      method += " implemented!";
+      break;
     }
     console.log("chrome.send stub: " + method);
-  }
+  };
 }
 
 // Since the extension now loads earlier to avoid showing the search bar,
 // navigating to most visited sites will reload this web page and rerun this
 // script (don't know why). Running this script again will emit errors and
 // produce noticeable differences (the spinning loading indicator, contents
-// disappearing, etc). Preventing from reloading is a solution.
-// window.loaded is set at the end of this script. The canary
+// disappearing, etc). Preventing from reloading is a solution. The canary
 // version doesn't have this bug.
+// window.loaded is set at the end of this script.
 if (window.loaded)
   throw new Error("Prevent from reloading this page.");
 
@@ -7084,17 +7149,17 @@ cr.define('ntp', function() {
       this.launch_.addEventListener('activate', this.onLaunch_.bind(this));
 
       menu.appendChild(cr.ui.MenuItem.createSeparator());
-      if (loadTimeData.getBoolean('enableStreamlinedHostedApps'))
-        this.launchRegularTab_ = this.appendMenuItem_('applaunchtypetab');
-      else
-        this.launchRegularTab_ = this.appendMenuItem_('applaunchtyperegular');
-      this.launchPinnedTab_ = this.appendMenuItem_('applaunchtypepinned');
-      if (!cr.isMac)
-        this.launchNewWindow_ = this.appendMenuItem_('applaunchtypewindow');
-      this.launchFullscreen_ = this.appendMenuItem_('applaunchtypefullscreen');
+      this.launchRegularTab_ =
+          this.appendMenuItem_('applaunchtyperegular', 'OPEN_AS_REGULAR_TAB');
+      this.launchPinnedTab_ =
+          this.appendMenuItem_('applaunchtypepinned', 'OPEN_AS_PINNED_TAB');
+      this.launchNewWindow_ =
+          this.appendMenuItem_('applaunchtypewindow', 'OPEN_AS_WINDOW');
+      this.launchFullscreen_ =
+          this.appendMenuItem_('applaunchtypefullscreen', 'OPEN_FULL_SCREEN');
 
       var self = this;
-      this.forAllLaunchTypes_(function(launchTypeButton, id) {
+      this.forAllLaunchTypes_(function(launchTypeButton, name) {
         launchTypeButton.addEventListener('activate',
             self.onLaunchTypeChanged_.bind(self));
       });
@@ -7126,21 +7191,24 @@ cr.define('ntp', function() {
      * Appends a menu item to |this.menu|.
      * @param {?string} textId If non-null, the ID for the localized string
      *     that acts as the item's label.
+     * @param {?string} name If non-null, the name of the button.
      */
-    appendMenuItem_: function(textId) {
+    appendMenuItem_: function(textId, name) {
       var button = cr.doc.createElement('button');
       this.menu.appendChild(button);
       cr.ui.decorate(button, cr.ui.MenuItem);
       if (textId)
         button.textContent = loadTimeData.getString(textId);
+      if (name)
+        button.name = name;
       return button;
     },
 
     /**
      * Iterates over all the launch type menu items.
-     * @param {function(cr.ui.MenuItem, number)} f The function to call for each
+     * @param {function(cr.ui.MenuItem, string)} f The function to call for each
      *     menu item. The parameters to the function include the menu item and
-     *     the associated launch ID.
+     *     the associated launch type name.
      */
     forAllLaunchTypes_: function(f) {
       // Order matters: index matches launchType id.
@@ -7153,7 +7221,7 @@ cr.define('ntp', function() {
         if (!launchTypes[i])
           continue;
 
-        f(launchTypes[i], i);
+        f(launchTypes[i], launchTypes[i].name);
       }
     },
 
@@ -7166,14 +7234,39 @@ cr.define('ntp', function() {
 
       this.launch_.textContent = app.appData.title;
 
-      var launchTypeRegularTab = this.launchRegularTab_;
-      this.forAllLaunchTypes_(function(launchTypeButton, id) {
+      var availableLaunchTypes = app.appData.availableLaunchTypes;
+      if (availableLaunchTypes) {
+        this.forAllLaunchTypes_(function(launchTypeButton, name) {
+          launchTypeButton.hidden = true;
+        });
+
+        for (var i = 0; i < availableLaunchTypes.length; i++) {
+          switch (availableLaunchTypes[i]) {
+          case 'OPEN_AS_REGULAR_TAB':
+            this.launchRegularTab_.hidden = false;
+            break;
+          case 'OPEN_AS_PINNED_TAB':
+            this.launchPinnedTab_.hidden = false;
+            break;
+          case 'OPEN_AS_WINDOW':
+            this.launchNewWindow_.hidden = false;
+            break;
+          case 'OPEN_FULL_SCREEN':
+            this.launchFullscreen_.hidden = false;
+            break;
+          }
+        }
+      }
+
+      this.forAllLaunchTypes_(function(launchTypeButton, name) {
         launchTypeButton.disabled = false;
-        launchTypeButton.checked = app.appData.launch_type == id;
-        // Streamlined hosted apps should only show the "Open as tab" button.
-        launchTypeButton.hidden = app.appData.packagedApp ||
-            (loadTimeData.getBoolean('enableStreamlinedHostedApps') &&
-             launchTypeButton != launchTypeRegularTab);
+        launchTypeButton.checked = app.appData.launch_type == name;
+        if (availableLaunchTypes) {
+          if (app.appData.packagedApp)
+            launchTypeButton.hidden = true;
+        } else {
+          launchTypeButton.hidden = app.appData.packagedApp;
+        }
       });
 
       this.launchTypeMenuSeparator_.hidden = app.appData.packagedApp;
@@ -7206,18 +7299,12 @@ cr.define('ntp', function() {
       var pressed = e.currentTarget;
       var app = this.app_;
       var targetLaunchType = pressed;
-      // Streamlined hosted apps can only toggle between open as window and open
-      // as tab.
-      if (loadTimeData.getBoolean('enableStreamlinedHostedApps')) {
-        targetLaunchType = this.launchRegularTab_.checked ?
-            this.launchNewWindow_ : this.launchRegularTab_;
-      }
-      this.forAllLaunchTypes_(function(launchTypeButton, id) {
+      this.forAllLaunchTypes_(function(launchTypeButton, name) {
         if (launchTypeButton == targetLaunchType) {
-          chrome.send('setLaunchType', [app.appId, id]);
+          chrome.send('setLaunchType', [app.appId, name]);
           // Manually update the launch type. We will only get
           // appsPrefChangeCallback calls after changes to other NTP instances.
-          app.appData.launch_type = id;
+          app.appData.launch_type = name;
         }
       });
     },
@@ -7283,7 +7370,7 @@ cr.define('ntp', function() {
         this.imgDiv_ = this.querySelector('.app-icon-div');
         this.addLaunchClickTarget_(this.imgDiv_);
         this.imgDiv_.title = this.appData_.full_name;
-        chrome.send('getAppIconDominantColor', [this.id]);
+        chrome.send('getAppIconDominantColor', [this.appImgSrc_, this.id]);
       } else {
         this.addLaunchClickTarget_(this.appImgContainer_);
         this.appImgContainer_.title = this.appData_.full_name;
@@ -7355,7 +7442,9 @@ cr.define('ntp', function() {
      */
     loadIcon: function() {
       if (this.appImgSrc_) {
-        this.appImg_.src = this.appImgSrc_;
+        var imgId = "appimg-" + this.appData_.id
+        this.appImg_.id = imgId;
+        chrome.send("_getAppImage", [this.appImgSrc_ + "?" + new Date().getTime(), imgId]);
         this.appImg_.classList.remove('invisible');
         this.appImgSrc_ = null;
       }
@@ -7543,7 +7632,6 @@ cr.define('ntp', function() {
      */
     removeFromChrome: function() {
       chrome.send('uninstallApp', [this.appData_.id, true]);
-      this.tile.tilePage.removeTile(this.tile, true);
     },
 
     /**
@@ -7576,6 +7664,17 @@ cr.define('ntp', function() {
     tileSpacingFraction: 1 / 8,
   };
   TilePage.initGridValues(appsPageGridValues);
+
+  /**
+   * Changing the returned object will change the internal object as well.
+   */
+  function getAppsPageGridValues() {
+    return appsPageGridValues;
+  }
+
+  function loadAppsPageSettings() {
+    TilePage.initGridValues(appsPageGridValues);
+  }
 
   /**
    * Creates a new AppsPage object.
@@ -7809,6 +7908,8 @@ cr.define('ntp', function() {
     APP_LAUNCH: APP_LAUNCH,
     AppsPage: AppsPage,
     launchAppAfterEnable: launchAppAfterEnable,
+    getAppsPageGridValues: getAppsPageGridValues,
+    loadAppsPageSettings: loadAppsPageSettings
   };
 });
 
@@ -7899,103 +8000,6 @@ cr.define('ntp', function() {
 
 cr.define('ntp', function() {
   'use strict';
-
-  // Merged RGBaster inside this: https://github.com/briangonzalez/rgbaster.js
-  var getContext = function(){
-    return document.createElement("canvas").getContext('2d');
-  };
-
-  var getImageData = function(img, loaded){
-
-    var imgObj = new Image();
-    var imgSrc = img.src || img;
-
-    // Can't set cross origin to be anonymous for data url's
-    // https://github.com/mrdoob/three.js/issues/1305
-    if ( imgSrc.substring(0,5) !== 'data:' )
-      imgObj.crossOrigin = "Anonymous";
-
-    imgObj.onload = function(){  
-      var context = getContext();
-      context.drawImage(imgObj, 0, 0);
-
-      var imageData = context.getImageData(0, 0, imgObj.width, imgObj.height);
-      loaded && loaded(imageData.data);
-    };
-    
-    imgObj.src = imgSrc;
-
-  };
-
-  var makeRGB = function(name){
-    return ['rgb(', name, ')'].join('');
-  };
-
-  var mapPalette = function(palette){
-    return palette.map(function(c){ return makeRGB(c.name) })
-  }
-
-  var BLOCKSIZE = 5; 
-  var PALETTESIZE = 10; 
-
-  var RGBaster = {};
-
-  RGBaster.colors = function(img, success, paletteSize){
-    getImageData(img, function(data){
-
-              var length        = data.length,
-                  colorCounts   = {},
-                  rgbString     = '',
-                  rgb           = [],
-                  colors        = { 
-                    dominant: { name: '', count: 0 },
-                    palette:  Array.apply(null, Array(paletteSize || PALETTESIZE)).map(Boolean).map(function(a){ return { name: '0,0,0', count: 0 } }) 
-                  };
-
-              // Loop over all pixels, in BLOCKSIZE iterations.
-              var i = 0;
-              while ( i < length ) {
-                rgb[0] = data[i];
-                rgb[1] = data[i+1];
-                rgb[2] = data[i+2];
-                rgbString = rgb.join(",");
-
-                // Keep track of counts.
-                if ( rgbString in colorCounts ) {
-                  colorCounts[rgbString] = colorCounts[rgbString] + 1; 
-                } 
-                else{
-                  colorCounts[rgbString] = 1;
-                }
-
-                // Find dominant and palette, ignoring black/white pixels.
-                if ( rgbString !== "0,0,0" && rgbString !== "255,255,255" ) {
-                  var colorCount = colorCounts[rgbString]
-                  if ( colorCount > colors.dominant.count ){
-                    colors.dominant.name = rgbString;
-                    colors.dominant.count = colorCount;
-                  } else {
-                    colors.palette.some(function(c){
-                      if ( colorCount > c.count ) {
-                        c.name = rgbString;
-                        c.count = colorCount;
-                        return true;
-                      }
-                    });
-                  }
-                }
-
-                // Increment!
-                i += BLOCKSIZE * 4;
-              }
-
-              success && success({
-                dominant: makeRGB(colors.dominant.name),
-                palette:  mapPalette(colors.palette)
-              });
-    });
-  }
-  // end RGBster merge
 
   var TilePage = ntp.TilePage;
 
@@ -8299,6 +8303,18 @@ cr.define('ntp', function() {
   var THUMBNAIL_COUNT = 8;
 
   /**
+   * Changing the returned object will change the internal object as well.
+   */
+  function getMostVisitedPageGridValues() {
+    return mostVisitedPageGridValues;
+  }
+
+  function loadMostVisitedPageSettings(thumbnailCount) {
+    TilePage.initGridValues(mostVisitedPageGridValues);
+    THUMBNAIL_COUNT = thumbnailCount;
+  }
+
+  /**
    * Creates a new MostVisitedPage object.
    * @constructor
    * @extends {TilePage}
@@ -8496,6 +8512,8 @@ cr.define('ntp', function() {
   return {
     MostVisitedPage: MostVisitedPage,
     refreshData: refreshData,
+    getMostVisitedPageGridValues: getMostVisitedPageGridValues,
+    loadMostVisitedPageSettings: loadMostVisitedPageSettings
   };
 });
 
@@ -9947,8 +9965,9 @@ cr.define('ntp', function() {
     if (loadTimeData.getBoolean('showMostvisited'))
       sectionsToWaitFor++;
     if (loadTimeData.getBoolean('showApps')) {
-      // Apps are not supported yet.
-      //sectionsToWaitFor++;
+      // Fix various bugs when showing apps is not enabled.
+      if (loadTimeData.getBoolean('showAppsPage'))
+        sectionsToWaitFor++;
       if (loadTimeData.getBoolean('showAppLauncherPromo')) {
         $('app-launcher-promo-close-button').addEventListener('click',
             function() { chrome.send('stopShowingAppLauncherPromo'); });
@@ -10477,6 +10496,12 @@ cr.define('ntp', function() {
     }
   }
 
+  function reloadForeignSessions() {
+    if (otherSessionsButton) {
+      otherSessionsButton.reloadForeignSessions();
+    }
+  }
+
   function getAppsCallback() {
     return newTabView.getAppsCallback.apply(newTabView, arguments);
   }
@@ -10516,6 +10541,7 @@ cr.define('ntp', function() {
     leaveRearrangeMode: leaveRearrangeMode,
     logTimeToClick: logTimeToClick,
     NtpFollowAction: NtpFollowAction,
+    reloadForeignSessions: reloadForeignSessions,
     saveAppPageName: saveAppPageName,
     setAppToBeHighlighted: setAppToBeHighlighted,
     setBookmarkBarAttached: setBookmarkBarAttached,
@@ -10615,6 +10641,7 @@ cr.define('ntp', function() {
       var isWindow = data.type == 'window';
       var a = this.ownerDocument.createElement('a');
       a.className = 'footer-menu-item';
+      a.id = 'footer-menu-item-' + data.sessionId;
       if (isWindow) {
         a.href = '';
         a.classList.add('recent-window');
@@ -10622,9 +10649,13 @@ cr.define('ntp', function() {
         a.title = data.tabs.map(function(tab) { return tab.title; }).join('\n');
       } else {
         a.href = data.url;
-        a.style.backgroundImage = getFaviconImageSet(data.url);
+        chrome.send('_getFaviconImage',
+                    [getFaviconUrlForCurrentDevicePixelRatio(data.url), a.id]);
         a.textContent = data.title;
       }
+
+      var menuButton = MenuButton;
+      var currentInstance = this;
 
       function onActivated(e) {
         ntp.logTimeToClick('RecentlyClosed');
@@ -10647,6 +10678,7 @@ cr.define('ntp', function() {
 
         e.preventDefault();
         e.stopPropagation();
+        menuButton.prototype.hideMenu.apply(currentInstance, null);
       }
       a.addEventListener('activate', onActivated);
       a.addEventListener('click', function(e) { e.preventDefault(); });
@@ -10874,12 +10906,13 @@ cr.define('ntp', function() {
           var tab = window.tabs[j];
           var a = doc.createElement('a');
           a.className = 'footer-menu-item';
+          a.id = 'footer-menu-item-' + tab.sessionId;
           a.textContent = tab.title;
           a.href = tab.url;
-          a.style.backgroundImage = getFaviconImageSet(tab.url);
+          chrome.send('_getFaviconImage',
+                      [getFaviconUrlForCurrentDevicePixelRatio(tab.url), a.id]);
 
-          var clickHandler = this.makeClickHandler_(
-              session.tag, String(window.sessionId), String(tab.sessionId));
+          var clickHandler = this.makeClickHandler_(tab.sessionId);
           a.addEventListener('click', clickHandler);
           contents.appendChild(a);
           cr.ui.decorate(a, MenuItem);
@@ -10910,6 +10943,10 @@ cr.define('ntp', function() {
 
       // The menu button is shown iff tab sync is enabled.
       this.hidden = !isTabSyncEnabled;
+    },
+
+    reloadForeignSessions: function() {
+      this.setForeignSessions(this.sessions_, true);
     },
 
     /**
@@ -10977,9 +11014,14 @@ cr.define('ntp', function() {
     onCollapseOrExpand_: function(e) {
       this.session_.collapsed = !this.session_.collapsed;
       this.updateMenuItems_();
-      chrome.send('setForeignSessionCollapsed',
-                  [this.session_.tag, this.session_.collapsed]);
-      chrome.send('getForeignSessions');  // Refresh the list.
+      // There is no collapsed filter in chrome extension API.
+      // Mimic the behavior by setting foreign sessions again
+      // with existing data.
+      ntp.reloadForeignSessions();
+
+      //chrome.send('setForeignSessionCollapsed',
+      //            [this.session_.tag, this.session_.collapsed]);
+      //chrome.send('getForeignSessions');
 
       var eventId = this.session_.collapsed ?
           HISTOGRAM_EVENT.COLLAPSE_SESSION : HISTOGRAM_EVENT.EXPAND_SESSION;
@@ -11044,6 +11086,8 @@ var loadLocalizedData = function() {
     loadTimeData.data_.showRecentlyClosed = true;
     // Let the most visited page be the default.
     loadTimeData.data_.shown_page_type = 1024;
+    loadTimeData.data_.isUserSignedIn = true;
+    loadTimeData.data_.disableCreateAppShortcut = false;
     loadTimeData.data_.hasattribution = 
       (chrome.embeddedSearch.newTabPage.themeBackgroundInfo.attributionUrl != undefined);
   }
@@ -11278,17 +11322,236 @@ var setTopSite = function() {
   }
 };
 
+cr.define("ntr", function() {
+  var appPageIndex, appPageSettings;
+  var appPageSettingsName = "ntp_app_settings";
+
+  function loadDefaultAppPageSettings() {
+    appPageSettings = {
+      pageNames: {
+        maxIndex: 0
+      },
+      appOrder: {}
+    };
+  }
+
+  function loadAppPageSettings() {
+    var settings = localStorage.getItem(appPageSettingsName);
+    if (!settings) {
+      loadDefaultAppPageSettings();
+      return;
+    }
+
+    try {
+      appPageSettings = JSON.parse(settings);
+    } catch(e) {
+      loadDefaultAppPageSettings();
+    }
+  }
+
+  loadAppPageSettings();
+
+  function saveAppPageSettings() {
+    localStorage.setItem(appPageSettingsName, JSON.stringify(appPageSettings));
+  }
+
+  function setPageIndex(pageIndex) {
+    appPageIndex = pageIndex;
+  }
+
+  function saveAppPageName(name, index) {
+    appPageSettings.pageNames[index] = name;
+    if (index > appPageSettings.pageNames.maxIndex)
+      appPageSettings.pageNames.maxIndex = index;
+
+    saveAppPageSettings();
+  }
+
+  function reorderApps(apps) {
+    for (var i = 0; i < apps.length; i++) {
+      appPageSettings.appOrder[apps[i]] = {
+        pageIndex: appPageIndex,
+        order: i
+      };
+    }
+    saveAppPageSettings();
+  }
+
+  function processAppInfo(item) {
+    if (!item.isApp)
+        return null;
+
+    var appOrder = appPageSettings.appOrder[item.id];
+    if (appOrder) {
+      item.app_launch_ordinal = appOrder.order;
+      item.page_index = appOrder.pageIndex;
+    } else if (item.id == "ahfgeienlihckogmohjhadlkjgocpleb") {
+      // Put web store at first
+      item.app_launch_ordinal = "a" + item.name;
+    } else if (item.type == "hosted_app" && item.updateUrl == undefined) {
+      // Put bookmark links at last
+      item.app_launch_ordinal = "z" + item.name;
+    } else {
+      item.app_launch_ordinal = "t" + item.name;
+    }
+
+    if (item.icons && item.icons.length > 0) {
+      item.icon_big = item.icons[item.icons.length - 1].url;
+      item.icon_small = item.icons[0].url;
+      item.icon_big_exists = true;
+      item.icon_small_exists = true;
+
+      if (item.icons.length == 1) {
+        if (item.icons[0].size < 128)
+          item.icon_big_exists = false;
+        else
+          item.icon_small_exists = false;
+      }
+    } else {
+      item.icon_big = "chrome://extension-icon/" + item.id + "/128/0";
+      item.icon_small = "chrome://extension-icon/" + item.id + "/16/0";
+    }
+
+    if (item.type == "packaged_app")
+      item.packagedApp = true;
+
+    item.full_name = item.name;
+    item.title = item.name;
+    item.detailsUrl = item.homepageUrl;
+    item.launch_type = item.launchType;
+    return item;
+  }
+
+  function getAppPageNames() {
+    var names = [];
+    if (!appPageSettings.pageNames[0])
+      names.push(loadTimeData.data_.appDefaultPageName);
+
+    for (var i = 0; i <= appPageSettings.pageNames.maxIndex; i++)
+      if (appPageSettings.pageNames[i])
+        names.push(appPageSettings.pageNames[i]);
+
+    return names;
+  }
+
+  return {
+    setPageIndex: setPageIndex,
+    saveAppPageName: saveAppPageName,
+    reorderApps: reorderApps,
+    processAppInfo: processAppInfo,
+    getAppPageNames: getAppPageNames
+  };
+});
+
 // Duplicate with loadTimeData.js
 window.addEventListener("message", function(event) {
   console.log(event.data);
+
   if (event.data.method == "topSitesResult") {
     topsite = event.data.result;
     setTopSite();
-  } else if (event.data.method == "dominantColorResult")
+  } else if (event.data.method == "dominantColorResult") {
     ntp.setFaviconDominantColor(event.data.result.id, event.data.result.dominantColor);
+  } else if (event.data.method == "recentlyClosedResult") {
+    // Process the result to fit the previous format.
+    var result = event.data.result;
+    for (var i = 0; i < result.length; i++) {
+      if (result[i].window) {
+        result[i] = result[i].window;
+        result[i].type = "window";
+      } else
+        result[i] = result[i].tab;
+    }
+    ntp.setRecentlyClosedTabs(result);
+  } else if (event.data.method == "_setFaviconImage") {
+    document.getElementById(event.data.result.id).style.backgroundImage =
+      "url('" + event.data.result.data + "')";
+  } else if (event.data.method == "_setAppImage") {
+    document.getElementById(event.data.result.id).src = event.data.result.data;
+  } else if (event.data.method == "foreignSessionsResult") {
+    // Process the result to fit the previous format.
+    moment.lang(event.data.result.languages);
+
+    var result = event.data.result.data;
+    for (var i = 0; i < result.length; i++) {
+      var item = result[i];
+      item.name = item.deviceName || item.info;
+      item.collapsed = false;
+      item.modifiedTime = "";
+      item.tag = new Array();
+      item.windows = new Array();
+
+      var sessions = item.sessions;
+      for (var j = 0; j < sessions.length; j++) {
+        var session = sessions[j];
+        item.windows.push(session.window);
+        if (item.modifiedTime == "")
+          item.modifiedTime = moment.unix(session.lastModified).fromNow();
+        // Open all sessions when clicking "open all" menu.
+        item.tag.push(session.window.sessionId);
+      }
+    }
+    ntp.setForeignSessions(result, true);
+  } else if (event.data.method == "appsResult") {
+    // Process the result to fit the previous format.
+    var result = {
+      appPageNames: ntr.getAppPageNames(),
+      apps: []
+    };
+
+    var apps = event.data.result;
+    for (var i = 0; i < apps.length; i++) {
+      var item = ntr.processAppInfo(apps[i]);
+      if (item != null)
+        result.apps.push(item);
+    }
+    ntp.getAppsCallback(result);
+  } else if (event.data.method == "appInstalled") {
+    var item = ntr.processAppInfo(event.data.result);
+    if (item != null)
+      ntp.appAdded(item, false);
+  } else if (event.data.method == "appUninstalled") {
+    var item = { id: event.data.result };
+    // The app can be an extension or theme that is not shown.
+    if ($(event.data.result))
+      ntp.appRemoved(item, true, true);
+  } else if (event.data.method == "appEnabled" ||
+             event.data.method == "appDisabled") {
+    var item = ntr.processAppInfo(event.data.result);
+    if (item != null)
+      ntp.appRemoved(item, false, true);
+  } else if (event.data.method == "onRecentlyClosed") {
+    chrome.send("getRecentlyClosedTabs");
+  } else if (event.data.method == "_setSettings") {
+    var options = event.data.result;
+
+    var mostVisitedPageGridValues = ntp.getMostVisitedPageGridValues();
+    mostVisitedPageGridValues.maxColCount = options.mTilesPerRow.value;
+    ntp.loadMostVisitedPageSettings(options.mNumberOfTiles.value);
+
+    var appsPageGridValues = ntp.getAppsPageGridValues();
+    appsPageGridValues.maxColCount = options.mAppsPerRow.value;
+    ntp.loadAppsPageSettings();
+
+    loadTimeData.data_.showAppsPage = options.showAppsPage;
+    if (options.showAppsPage)
+      restoreLastPage();
+
+    // Manually call onLoad
+    ntp.onLoad();
+  }
 }, false);
 
-window.loaded = true;
+// Restore last page.
+var restoreLastPage = function() {
+  var shownPage = localStorage.getItem("ntp_shown_page_type");
+  if (shownPage != null && Number(shownPage) != NaN)
+    loadTimeData.data_.shown_page_type = Number(shownPage);
 
-// Manually call onLoad
-ntp.onLoad();
+  var shownPageIndex = localStorage.getItem("ntp_shown_page_index");
+  if (shownPageIndex != null && Number(shownPageIndex) != NaN)
+    loadTimeData.data_.shown_page_index = Number(shownPageIndex);
+};
+
+window.loaded = true;
+chrome.send("_getSettings");
