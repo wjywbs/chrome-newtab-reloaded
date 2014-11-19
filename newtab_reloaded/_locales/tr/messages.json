@@ -4,7 +4,7 @@
     "description": "Extension Name"
   },
   "extDesc": {
-    "message": "Revert to the previous new tab page. Remove the instant extended search bars for chrome 33+!",
+    "message": "Restore the previous new tab page for Chrome 33+.",
     "description": "Extension Description"
   },
   "extShortName": {
