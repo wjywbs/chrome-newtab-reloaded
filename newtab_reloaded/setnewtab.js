@@ -1,30 +1,30 @@
 var loaded = false;
 
-  var port = chrome.runtime.connect({name: "newtabreloaded"});
-  port.onMessage.addListener(function(response) {
-    switch (response.method) {
-    case "topSitesResult":
-    case "dominantColorResult":
-    case "recentlyClosedResult":
-    case "_setFaviconImage":
-    case "_setAppImage":
-    case "foreignSessionsResult":
-    case "appsResult":
-    case "appInstalled":
-    case "appUninstalled":
-    case "appEnabled":
-    case "appDisabled":
-    case "onRecentlyClosed":
-    case "_setSettings":
-      window.postMessage({ method: response.method, result: response.result }, "*");
-      break;
-    }
-  });
+var port = chrome.runtime.connect({name: "newtabreloaded"});
+port.onMessage.addListener(function(response) {
+  switch (response.method) {
+  case "topSitesResult":
+  case "dominantColorResult":
+  case "recentlyClosedResult":
+  case "_setFaviconImage":
+  case "_setAppImage":
+  case "foreignSessionsResult":
+  case "appsResult":
+  case "appInstalled":
+  case "appUninstalled":
+  case "appEnabled":
+  case "appDisabled":
+  case "onRecentlyClosed":
+  case "_setSettings":
+    window.postMessage({ method: response.method, result: response.result }, "*");
+    break;
+  }
+});
 
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", chrome.extension.getURL("newtab.htm"), false);
-  xhr.send();
+var xhr = new XMLHttpRequest();
+xhr.open("GET", chrome.extension.getURL("newtab.htm"));
 
+xhr.onreadystatechange = function() {
   if (xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200 && !loaded) {
     loaded = true;
 
@@ -61,3 +61,5 @@ var loaded = false;
       }
     }, false);
   }
+};
+xhr.send();

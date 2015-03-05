@@ -11540,6 +11540,8 @@ window.addEventListener("message", function(event) {
     if (options.showAppsPage)
       restoreLastPage();
 
+    window.settingsReceived = true;
+
     // Manually call onLoad
     ntp.onLoad();
   }
@@ -11557,4 +11559,17 @@ var restoreLastPage = function() {
 };
 
 window.loaded = true;
-chrome.send("_getSettings");
+
+window.settingsReceived = false;
+retryCount = 0;
+
+var getSettings = function() {
+  if (window.settingsReceived) {
+    console.log("Settings loaded in " + retryCount * retryInterval + "ms");
+  } else {
+    chrome.send("_getSettings");
+    retryCount++;
+    window.setTimeout(getSettings, retryInterval);
+  }
+};
+getSettings();
