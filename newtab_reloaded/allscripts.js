@@ -11275,6 +11275,9 @@ function convertArrayToRGBAColor(rgbaColor) {
 // End Copied from chrome-search://most-visited/util.js
 
 var updateTheme = function() {
+  // Set the handler again because it can be overwritten by the default NTP.
+  chrome.embeddedSearch.newTabPage.onthemechange = updateTheme;
+
   var themeInfo = chrome.embeddedSearch.newTabPage.themeBackgroundInfo;
   ntp.themeChanged(themeInfo.attributionUrl != undefined);
 
