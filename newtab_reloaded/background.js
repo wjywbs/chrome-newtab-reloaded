@@ -95,7 +95,9 @@ chrome.runtime.onConnect.addListener(function(port) {
 
     case "launchApp":
       chrome.management.setEnabled(request.id, true, function() {
-        chrome.management.launchApp(request.id);
+        chrome.management.launchApp(request.id, function() {
+          chrome.tabs.remove(port.sender.tab.id);
+        });
       });
       break;
 

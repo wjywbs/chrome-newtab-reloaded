@@ -70,9 +70,6 @@ if (chrome.send == undefined) {
       method += " implemented!";
       break;
     case "launchApp":
-      sendExtensionEvent({ method: method, id: args[0] });
-      window.close();
-      break;
     case "uninstallApp":
     case "createAppShortcut":
       sendExtensionEvent({ method: method, id: args[0] });
