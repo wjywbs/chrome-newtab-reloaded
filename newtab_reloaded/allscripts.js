@@ -11312,7 +11312,7 @@ document.addEventListener('ntpLoaded', updateTheme);
 chrome.embeddedSearch.newTabPage.onthemechange = updateTheme;
 
 
-var retryCount = 0, retryInterval = 50;
+var retryCount = 0, retryInterval = 25;
 var topsite;
 
 var setTopSite = function() {
@@ -11452,6 +11452,7 @@ window.addEventListener("message", function(event) {
 
   if (event.data.method == "topSitesResult") {
     topsite = event.data.result;
+    retryCount = 0;
     setTopSite();
   } else if (event.data.method == "dominantColorResult") {
     ntp.setFaviconDominantColor(event.data.result.id, event.data.result.dominantColor);
@@ -11526,6 +11527,11 @@ window.addEventListener("message", function(event) {
   } else if (event.data.method == "onRecentlyClosed") {
     chrome.send("getRecentlyClosedTabs");
   } else if (event.data.method == "_setSettings") {
+    if (window.settingsReceived)
+      return;
+    else
+      window.settingsReceived = true;
+
     var options = event.data.result;
 
     var mostVisitedPageGridValues = ntp.getMostVisitedPageGridValues();
@@ -11539,8 +11545,6 @@ window.addEventListener("message", function(event) {
     loadTimeData.data_.showAppsPage = options.showAppsPage;
     if (options.showAppsPage)
       restoreLastPage();
-
-    window.settingsReceived = true;
 
     // Manually call onLoad
     ntp.onLoad();
@@ -11559,9 +11563,7 @@ var restoreLastPage = function() {
 };
 
 window.loaded = true;
-
 window.settingsReceived = false;
-retryCount = 0;
 
 var getSettings = function() {
   if (window.settingsReceived) {
