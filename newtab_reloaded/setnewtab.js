@@ -32,6 +32,7 @@ xhr.onreadystatechange = function() {
     var htmlText = xhr.responseText.replace("$EXTENSION_LOCALE_URL", chrome.extension.getURL(localePath));
     htmlText = htmlText.replace(new RegExp("\\$EXTENSION_URL", "g"), chrome.extension.getURL(""));
     document.write(htmlText);
+    document.close();
 
     window.addEventListener("extensionEvent", function(event) {
       switch (event.detail.method) {
