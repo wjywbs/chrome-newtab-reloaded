@@ -1187,6 +1187,8 @@ this.cr = (function() {
     defineProperty: defineProperty,
     dispatchPropertyChange: dispatchPropertyChange,
     dispatchSimpleEvent: dispatchSimpleEvent,
+    getGetter: getGetter,
+    getSetter: getSetter,
     getUid: getUid,
     initialize: initialize,
     PropertyKind: PropertyKind
@@ -4157,7 +4159,13 @@ cr.define('cr.ui', function() {
    * Whether the menu item is disabled or not.
    * @type {boolean}
    */
-  cr.defineProperty(MenuItem, 'disabled', cr.PropertyKind.BOOL_ATTR);
+  // cr.defineProperty() no longer works here for Chrome 43 because the
+  // "disabled" property is pre-defined and defineProperty() will not define it
+  // again.
+  MenuItem.prototype.__defineGetter__(
+      'disabled', cr.getGetter('disabled', cr.PropertyKind.BOOL_ATTR));
+  MenuItem.prototype.__defineSetter__(
+      'disabled', cr.getSetter('disabled', cr.PropertyKind.BOOL_ATTR));
 
   /**
    * Whether the menu item is hidden or not.
