@@ -11073,32 +11073,22 @@ cr.define('ntp', function() {
 });
 
 var loadLocalizedData = function() {
-  var self_url = document.getElementById("extension_script").src;
-  var locale = self_url.substring(self_url.indexOf("?") + 1);
-  var extension_url = self_url.substring(0, self_url.lastIndexOf("/") + 1);
+  loadTimeData.data = ntrLoadTimeData;
 
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", extension_url + "_locales/" + locale + "/loadTimeData.js", false);
-  xhr.send();
+  if (cr.isMac)
+    loadTimeData.data_.fontfamily = "'Lucida Grande', sans-serif";
+  if (cr.isLinux)
+    loadTimeData.data_.fontfamily = "Ubuntu, Arial, sans-serif";
 
-  if (xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200) {
-    eval(xhr.responseText);
-
-    if (cr.isMac)
-      loadTimeData.data_.fontfamily = "'Lucida Grande', sans-serif";
-    if (cr.isLinux)
-      loadTimeData.data_.fontfamily = "Ubuntu, Arial, sans-serif";
-
-    loadTimeData.data_.showMostvisited = true;
-    loadTimeData.data_.showOtherSessionsMenu = true;
-    loadTimeData.data_.showRecentlyClosed = true;
-    // Let the most visited page be the default.
-    loadTimeData.data_.shown_page_type = 1024;
-    loadTimeData.data_.isUserSignedIn = true;
-    loadTimeData.data_.disableCreateAppShortcut = false;
-    loadTimeData.data_.hasattribution = 
-      (chrome.embeddedSearch.newTabPage.themeBackgroundInfo.attributionUrl != undefined);
-  }
+  loadTimeData.data_.showMostvisited = true;
+  loadTimeData.data_.showOtherSessionsMenu = true;
+  loadTimeData.data_.showRecentlyClosed = true;
+  // Let the most visited page be the default.
+  loadTimeData.data_.shown_page_type = 1024;
+  loadTimeData.data_.isUserSignedIn = true;
+  loadTimeData.data_.disableCreateAppShortcut = false;
+  loadTimeData.data_.hasattribution =
+    (chrome.embeddedSearch.newTabPage.themeBackgroundInfo.attributionUrl != undefined);
 };
 loadLocalizedData();
 

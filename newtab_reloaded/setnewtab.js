@@ -28,8 +28,8 @@ xhr.onreadystatechange = function() {
   if (xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200 && !loaded) {
     loaded = true;
 
-    var scriptUrl = chrome.extension.getURL("allscripts.js") + "?" + chrome.i18n.getMessage("folderName");
-    var htmlText = xhr.responseText.replace(new RegExp("\\$EXTENSION_SCRIPT_URL", "g"), scriptUrl);
+    var localePath = "_locales/" + chrome.i18n.getMessage("folderName") + "/loadTimeData.js";
+    var htmlText = xhr.responseText.replace("$EXTENSION_LOCALE_URL", chrome.extension.getURL(localePath));
     htmlText = htmlText.replace(new RegExp("\\$EXTENSION_URL", "g"), chrome.extension.getURL(""));
     document.write(htmlText);
 
