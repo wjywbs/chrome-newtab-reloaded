@@ -8088,6 +8088,15 @@ cr.define('ntp', function() {
       else
         data.ntpData = ntpMostVisitedData;
 
+      // Handle ntp data structure change in Chrome 46.
+      if (!ntpMostVisitedData.thumbnailUrl) {
+        var thumbnailUrls = ntpMostVisitedData.thumbnailUrls;
+        if (thumbnailUrls && thumbnailUrls.length > 0)
+          ntpMostVisitedData.thumbnailUrl = thumbnailUrls[0];
+        else
+          ntpMostVisitedData.thumbnailUrl = "";
+      }
+
       if (this.classList.contains('blacklisted') && data) {
         // Animate appearance of new tile.
         this.classList.add('new-tile-contents');
