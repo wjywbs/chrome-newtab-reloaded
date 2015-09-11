@@ -28,6 +28,7 @@ function loadSettings() {
   setValueFromLocalStorage(options.mNumberOfTiles);
   setValueFromLocalStorage(options.mShowWebstore);
   setValueFromLocalStorage(options.mAppsPerRow);
+  setValueFromLocalStorage(options.mHideFooter);
 }
 
 function applySettings() {
@@ -35,6 +36,7 @@ function applySettings() {
   setLocalStorageFromValue(options.mNumberOfTiles);
   setLocalStorageFromValue(options.mShowWebstore);
   setLocalStorageFromValue(options.mAppsPerRow);
+  setLocalStorageFromValue(options.mHideFooter);
 
   loadSettings();
 }
