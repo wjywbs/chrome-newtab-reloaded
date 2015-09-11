@@ -11553,7 +11553,7 @@ window.addEventListener("message", function(event) {
     if (options.showAppsPage)
       restoreLastPage();
 
-    if(options.mHideFooter.value)
+    if (options.mHideFooter.value)
       $("footer").style.display = "none";
 
     // Manually call onLoad
