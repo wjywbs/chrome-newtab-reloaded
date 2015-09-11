@@ -18,6 +18,11 @@ var options = {
     key: "appsPage.appsPerRow",
     element: "mAppsPerRow",
     defaultValue: 6
+  },
+  mHideFooter: {
+    key: "features.hideFooter",
+    element: "mHideFooter",
+    defaultValue: false
   }
 };
 

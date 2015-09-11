@@ -191,6 +191,7 @@ function getSettings() {
   loadOption(options.mNumberOfTiles);
   loadOption(options.mShowWebstore);
   loadOption(options.mAppsPerRow);
+  loadOption(options.mHideFooter);
   options.showAppsPage = (chrome.management.get != undefined);
   return options;
 }
