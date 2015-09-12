@@ -11553,8 +11553,8 @@ window.addEventListener("message", function(event) {
     if (options.showAppsPage)
       restoreLastPage();
 
-    if(options.mHideFooter.value)
-      $("footer").style.display = "none";
+    if(!options.mHideFooter.value)
+      $("footer").style.display = "block";
 
     // Manually call onLoad
     ntp.onLoad();
