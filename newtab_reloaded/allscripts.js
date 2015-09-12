@@ -11553,13 +11553,8 @@ window.addEventListener("message", function(event) {
     if (options.showAppsPage)
       restoreLastPage();
 
-<<<<<<< HEAD
     if(!options.mHideFooter.value)
       $("footer").style.display = "block";
-=======
-    if (options.mHideFooter.value)
-      $("footer").style.display = "none";
->>>>>>> wjywbs/master
 
     // Manually call onLoad
     ntp.onLoad();
