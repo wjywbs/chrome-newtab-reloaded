@@ -127,6 +127,25 @@ chrome.runtime.onConnect.addListener(function(port) {
     case "setLaunchType":
       chrome.management.setLaunchType(request.id, request.type);
       break;
+
+    case "_getNewTabResources":
+      var resources = '';
+      var getResource = function(url) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", chrome.extension.getURL(url), false);
+        xhr.send();
+        resources += xhr.responseText;
+      };
+      getResource("newtab.htm");
+      resources += '<script>';
+      getResource("moment-with-langs.min.js");
+      getResource("_locales/" + chrome.i18n.getMessage("folderName") +
+          "/loadTimeData.js");
+      getResource("allscripts.js");
+      resources += '</script>';
+
+      port.postMessage({ method: "_setNewTabResources", result: resources });
+      break;
     }
   });
 
