@@ -227,8 +227,6 @@
   "web_accessible_resources": [
     "newtab.htm",
     "allscripts.js",
-    "trash.png",
-    "suggestions_page.css",
     "moment-with-langs.min.js",
     "_locales/*"
   ],
