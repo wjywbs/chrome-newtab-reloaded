@@ -1,6 +1,8 @@
 
 var languages;
 chrome.i18n.getAcceptLanguages(function(data) {
+  // Prefer to use the current UI language.
+  data.unshift(chrome.i18n.getMessage("folderName"));
   languages = data;
 });
 
