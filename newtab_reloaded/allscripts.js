@@ -11273,7 +11273,12 @@ var retryCount = 0, retryInterval = 25;
 var topsite;
 
 var setTopSite = function() {
-  if (chrome.embeddedSearch.newTabPage.mostVisited.length == topsite.length) {
+  var length = chrome.embeddedSearch.newTabPage.mostVisited.length;
+  // In Chrome 60, topSites.get() can return more than 8 items.
+  if (length > 0 && length < topsite.length) {
+    topsite = topsite.splice(0, length);
+  }
+  if (length == topsite.length) {
     console.log("mostVisited loaded in " + retryCount * retryInterval + "ms");
     ntp.setMostVisitedPages(topsite);
   } else {
