@@ -8037,10 +8037,16 @@ cr.define('ntp', function() {
      */
     updateForData: function(data, ntpMostVisitedData) {
       // Handle call from removeURLsFromMostVisitedBlacklist
-      if (ntpMostVisitedData == undefined && data.ntpData != undefined)
-        ntpMostVisitedData = data.ntpData;
-      else
+      if (ntpMostVisitedData == undefined) {
+        // Handle limited amount of most visited pages in Chrome 60.
+        if (data.ntpData == undefined) {
+          ntpMostVisitedData = {thumbnailUrl: '', faviconUrl: ''};
+        } else {
+          ntpMostVisitedData = data.ntpData;
+        }
+      } else {
         data.ntpData = ntpMostVisitedData;
+      }
 
       // Handle ntp data structure change in Chrome 46.
       if (!ntpMostVisitedData.thumbnailUrl) {
@@ -8048,7 +8054,7 @@ cr.define('ntp', function() {
         if (thumbnailUrls && thumbnailUrls.length > 0)
           ntpMostVisitedData.thumbnailUrl = thumbnailUrls[0];
         else
-          ntpMostVisitedData.thumbnailUrl = "";
+          ntpMostVisitedData.thumbnailUrl = '';
       }
 
       if (this.classList.contains('blacklisted') && data) {
@@ -8069,13 +8075,18 @@ cr.define('ntp', function() {
       this.data_ = data;
       this.classList.add('focusable');
 
+      var faviconUrl = getFaviconUrlForCurrentDevicePixelRatio(data.url);
       var faviconDiv = this.querySelector('.favicon');
-      faviconDiv.style.backgroundImage = url(ntpMostVisitedData.faviconUrl);
+      if (ntpMostVisitedData.faviconUrl != '') {
+        faviconDiv.style.backgroundImage = url(ntpMostVisitedData.faviconUrl);
+      } else {
+        faviconDiv.id = 'most-visited-favicon-' + id;
+        chrome.send('_getFaviconImage', [faviconUrl, faviconDiv.id]);
+      }
 
       // The favicon should have the same dominant color regardless of the
       // device pixel ratio the favicon is requested for.
-      chrome.send('getFaviconDominantColor',
-                  [getFaviconUrlForCurrentDevicePixelRatio(data.url), this.id]);
+      chrome.send('getFaviconDominantColor', [faviconUrl, this.id]);
 
       var title = this.querySelector('.title');
       title.textContent = data.title;
@@ -11274,11 +11285,8 @@ var topsite;
 
 var setTopSite = function() {
   var length = chrome.embeddedSearch.newTabPage.mostVisited.length;
-  // In Chrome 60, topSites.get() can return more than 8 items.
-  if (length > 0 && length < topsite.length) {
-    topsite = topsite.splice(0, length);
-  }
-  if (length == topsite.length) {
+  // In Chrome 60, newTabPage.mostVisited is limited to 8 items.
+  if (length > 0) {
     console.log("mostVisited loaded in " + retryCount * retryInterval + "ms");
     ntp.setMostVisitedPages(topsite);
   } else {
