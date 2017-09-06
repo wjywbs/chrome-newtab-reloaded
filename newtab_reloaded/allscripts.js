@@ -8033,30 +8033,8 @@ cr.define('ntp', function() {
     /**
      * Update the appearance of this tile according to |data|.
      * @param {Object} data A dictionary of relevant data for the page.
-     * @param {Object} ntpMostVisitedData Data from chrome.embeddedSearch.newTabPage.
      */
-    updateForData: function(data, ntpMostVisitedData) {
-      // Handle call from removeURLsFromMostVisitedBlacklist
-      if (ntpMostVisitedData == undefined) {
-        // Handle limited amount of most visited pages in Chrome 60.
-        if (data.ntpData == undefined) {
-          ntpMostVisitedData = {thumbnailUrl: '', faviconUrl: ''};
-        } else {
-          ntpMostVisitedData = data.ntpData;
-        }
-      } else {
-        data.ntpData = ntpMostVisitedData;
-      }
-
-      // Handle ntp data structure change in Chrome 46.
-      if (!ntpMostVisitedData.thumbnailUrl) {
-        var thumbnailUrls = ntpMostVisitedData.thumbnailUrls;
-        if (thumbnailUrls && thumbnailUrls.length > 0)
-          ntpMostVisitedData.thumbnailUrl = thumbnailUrls[0];
-        else
-          ntpMostVisitedData.thumbnailUrl = '';
-      }
-
+    updateForData: function(data) {
       if (this.classList.contains('blacklisted') && data) {
         // Animate appearance of new tile.
         this.classList.add('new-tile-contents');
@@ -8071,18 +8049,15 @@ cr.define('ntp', function() {
 
       var id = tileID++;
       this.id = 'most-visited-tile-' + id;
-      data.restrictedId = ntpMostVisitedData.rid;
       this.data_ = data;
       this.classList.add('focusable');
+      if (!data.id)
+        data.id = id;
 
       var faviconUrl = getFaviconUrlForCurrentDevicePixelRatio(data.url);
       var faviconDiv = this.querySelector('.favicon');
-      if (ntpMostVisitedData.faviconUrl != '') {
-        faviconDiv.style.backgroundImage = url(ntpMostVisitedData.faviconUrl);
-      } else {
-        faviconDiv.id = 'most-visited-favicon-' + id;
-        chrome.send('_getFaviconImage', [faviconUrl, faviconDiv.id]);
-      }
+      faviconDiv.id = 'most-visited-favicon-' + id;
+      chrome.send('_getFaviconImage', [faviconUrl, faviconDiv.id]);
 
       // The favicon should have the same dominant color regardless of the
       // device pixel ratio the favicon is requested for.
@@ -8095,7 +8070,7 @@ cr.define('ntp', function() {
       // Sets the tooltip.
       this.title = data.title;
 
-      var thumbnailUrl = ntpMostVisitedData.thumbnailUrl;
+      var thumbnailUrl = 'chrome-search://thumb/' + data.url;
       this.querySelector('.thumbnail').style.backgroundImage =
           url(thumbnailUrl);
 
@@ -8171,7 +8146,11 @@ cr.define('ntp', function() {
      */
     blacklist_: function() {
       this.showUndoNotification_();
-      chrome.send('blacklistURLFromMostVisited', [this.data_.restrictedId]);
+      var data = this.data_;
+      var items = chrome.embeddedSearch.newTabPage.mostVisited;
+      if (items.length > 0)
+        data.restrictedId = data.id + items[0].rid;
+      chrome.send('blacklistURLFromMostVisited', [data.restrictedId]);
       this.reset();
       chrome.send('getMostVisited');
       this.classList.add('blacklisted');
@@ -8335,7 +8314,7 @@ cr.define('ntp', function() {
      * Update the tiles after a change to |data_|.
      */
     updateTiles_: function() {
-      var ntpMostVisited = chrome.embeddedSearch.newTabPage.mostVisited;
+      tileID = 0;
 
       for (var i = 0; i < THUMBNAIL_COUNT; i++) {
         var page = this.data_[i];
@@ -8344,7 +8323,7 @@ cr.define('ntp', function() {
         if (i >= this.data_.length)
           tile.reset();
         else
-          tile.updateForData(page, ntpMostVisited[i]);
+          tile.updateForData(page);
       }
     },
 
@@ -11279,22 +11258,6 @@ var updateTheme = function() {
 document.addEventListener('ntpLoaded', updateTheme);
 chrome.embeddedSearch.newTabPage.onthemechange = updateTheme;
 
-
-var retryCount = 0, retryInterval = 25;
-var topsite;
-
-var setTopSite = function() {
-  var length = chrome.embeddedSearch.newTabPage.mostVisited.length;
-  // In Chrome 60, newTabPage.mostVisited is limited to 8 items.
-  if (length > 0) {
-    console.log("mostVisited loaded in " + retryCount * retryInterval + "ms");
-    ntp.setMostVisitedPages(topsite);
-  } else {
-    retryCount++;
-    window.setTimeout(setTopSite, retryInterval);
-  }
-};
-
 cr.define("ntr", function() {
   var appPageIndex, appPageSettings;
   var appPageSettingsName = "ntp_app_settings";
@@ -11421,9 +11384,8 @@ window.addEventListener("message", function(event) {
   console.log(event.data);
 
   if (event.data.method == "topSitesResult") {
-    topsite = event.data.result;
-    retryCount = 0;
-    setTopSite();
+    var topsite = event.data.result;
+    ntp.setMostVisitedPages(topsite);
   } else if (event.data.method == "dominantColorResult") {
     ntp.setFaviconDominantColor(event.data.result.id, event.data.result.dominantColor);
   } else if (event.data.method == "recentlyClosedResult") {
@@ -11537,6 +11499,8 @@ var restoreLastPage = function() {
 
 window.loaded = true;
 window.settingsReceived = false;
+
+var retryCount = 0, retryInterval = 25;
 
 var getSettings = function() {
   if (window.settingsReceived) {
